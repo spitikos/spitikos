@@ -1,0 +1,3 @@
+[submodule "stats"]
+	path = stats
+	url = git@github.com:ethn1ee/pi-stats-api.git
