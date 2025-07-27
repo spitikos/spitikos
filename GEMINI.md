@@ -1,8 +1,9 @@
 # Gemini Configuration: Raspberry Pi 5 Project
 
-**Session Initialization:**
+**Session Management:**
 
-- **Mandatory First Step:** At the beginning of any new session, read the `log.md` file to gain a complete understanding of the project's history, architecture, and current state before proceeding.
+- **Initialization:** At the beginning of any new session, read the `log.md` file to gain a complete understanding of the project's history, architecture, and current state before proceeding.
+- **Logging:** At the end of a session or after completing a significant goal, update `log.md` with a summary of the progress made, problems encountered, and solutions implemented. This ensures the log remains a reliable source of truth for the project's state.
 
 **Target Environment:**
 

@@ -100,11 +100,34 @@
 
 ---
 
-### **Phase 4: Establishing Conventions**
+### **Phase 4: Debugging and Refinement**
 
-*   **Goal:** Define a set of rules for consistent development and configuration.
-*   **Action:** Created and iterated on rules within the `GEMINI.md` file.
+*   **Goal:** Resolve errors preventing the `IngressRoute` from functioning correctly.
+*   **Problem:** Traefik logs showed a `500 Internal Server Error` with the message `tls: failed to verify certificate: x509: cannot validate certificate for 10.42.0.33 because it doesn't contain any IP SANs`.
+*   **Root Cause:** Traefik was correctly refusing to connect to the dashboard service because the service's self-signed certificate was not valid for its internal pod IP address.
+*   **Solution:** Created a `ServersTransport` resource to instruct Traefik to skip TLS verification for this specific backend service.
+*   **Key Manifest (`app/kubernetes-dashboard/servers-transport.yaml`):**
+    ```yaml
+    apiVersion: traefik.io/v1alpha1
+    kind: ServersTransport
+    metadata:
+      name: kubernetes-dashboard-servers-transport
+    spec:
+      insecureSkipVerify: true
+    ```
+*   **Action:** Updated the `IngressRoute` to use the new `ServersTransport`.
+*   **Outcome:** The TLS verification error was resolved, leading to a fully functional and stable dashboard deployment.
+
+---
+
+### **Phase 5: Convention Finalization**
+
+*   **Goal:** Establish a strict and clear convention for managing all Kubernetes resources.
+*   **Action:** Iterated on naming and file structure rules, storing the final version in `GEMINI.md`.
+*   **Action:** Refactored all existing manifests in `app/kubernetes-dashboard/` to comply with the new standard.
 *   **Final Convention for Kubernetes Manifests:**
-    *   **File Path:** `app/<namespace>/<kind>-<descriptor>.yaml`
-    *   **Resource `metadata.name`:** `<namespace>-<kind>-<descriptor>`
-*   **Outcome:** A clear and organized structure for managing Kubernetes resources is now in place.
+    *   **Directory Structure:** `app/<namespace>/`
+    *   **File Name:** `<kind>.yaml` (e.g., `service-account.yaml`)
+    *   **Resource `metadata.name`:** `<namespace>-<kind>` (e.g., `kubernetes-dashboard-service-account`)
+    *   The `kind` should be kebab-case.
+*   **Outcome:** A clear, deterministic, and simplified structure for managing Kubernetes resources is now in place for all future development.
