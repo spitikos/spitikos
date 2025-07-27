@@ -23,6 +23,7 @@
 **Kubernetes Rules:**
 
 - **Manifest Convention:**
-    - **File Path:** Store manifest files in `app/<namespace>/<kind>-<descriptor>.yaml`.
-    - **Resource Name:** The `metadata.name` field within the manifest must be named `<namespace>-<kind>-<descriptor>`.
-    - The `<descriptor>` is optional and should be used for specificity.
+    - **Directory Structure:** `app/<namespace>/`
+    - **File Name:** `<kind>.yaml` (e.g., `service-account.yaml`)
+    - **Resource `metadata.name`:** `<namespace>-<kind>` (e.g., `kubernetes-dashboard-service-account`)
+    - The `kind` should be kebab-case.
