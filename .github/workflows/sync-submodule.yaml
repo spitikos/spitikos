@@ -1,0 +1,50 @@
+name: Sync Submodule
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_path:
+        description: 'The path to the submodule to update (e.g., apps/homepage)'
+        required: true
+        type: string
+
+jobs:
+  update-submodule:
+    name: Update Submodule Pointer
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout Parent Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull Latest Commit for Submodule
+        run: |
+          git submodule update --remote --merge ${{ github.event.inputs.app_path }}
+
+      - name: Check for Changes
+        id: check_changes
+        run: |
+          if [[ -n $(git status --porcelain ${{ github.event.inputs.app_path }}) ]]; then
+            echo "Submodule pointer has changed."
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "No changes to submodule pointer."
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and Push Changes
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add ${{ github.event.inputs.app_path }}
+          git commit -m "CI: Update submodule pointer for ${{ github.event.inputs.app_path }}"
+          git push
