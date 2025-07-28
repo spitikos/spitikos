@@ -7,12 +7,17 @@ on:
     paths:
       - 'apps/**'
   workflow_dispatch:
+    inputs:
+      apps_to_build:
+        description: 'Space-separated list of app paths to build (e.g., "apps/homepage apps/api/stats"). Leave blank to build all.'
+        required: false
+        default: ''
 
 jobs:
   discover:
     runs-on: ubuntu-latest
     outputs:
-      changed_apps_matrix: ${{ steps.changed-submodules.outputs.all_changed_files }}
+      changed_apps_matrix: ${{ steps.set-matrix.outputs.matrix }}
       all_paths: ${{ steps.discover-submodules.outputs.submodule_paths }}
       all_urls: ${{ steps.discover-submodules.outputs.submodule_urls }}
     steps:
@@ -29,23 +34,34 @@ jobs:
           SUBMODULE_URLS=$(git config -f .gitmodules --get-regexp url | awk '{ print $2 }' | tr '\n' ' ')
           echo "submodule_paths=$SUBMODULE_PATHS" >> $GITHUB_OUTPUT
           echo "submodule_urls=$SUBMODULE_URLS" >> $GITHUB_OUTPUT
-          
           echo "--- All Discovered Submodules ---"
           echo "$SUBMODULE_PATHS"
           echo "---------------------------------"
 
-      - name: Get Changed Submodule Directories
-        id: changed-submodules
+      - name: Get Changed Submodules on Push
+        id: changed-submodules-push
+        if: github.event_name == 'push'
         uses: tj-actions/changed-files@v44
         with:
           files: ${{ steps.discover-submodules.outputs.submodule_paths }}
 
-      - name: Print Changed Submodules
-        if: steps.changed-submodules.outputs.any_changed == 'true'
+      - name: Set Matrix for Build Job
+        id: set-matrix
         run: |
-          echo "--- Changed Submodules ---"
-          echo "${{ steps.changed-submodules.outputs.all_changed_files }}"
-          echo "--------------------------"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ "${{ github.event.inputs.apps_to_build }}" != "" ]]; then
+              echo "Manual trigger: Building specified apps..."
+              MATRIX_STRING=$(echo "${{ github.event.inputs.apps_to_build }}" | jq -R 'split(" ")' | jq -c '.')
+            else
+              echo "Manual trigger: Building all apps..."
+              MATRIX_STRING=$(echo "${{ steps.discover-submodules.outputs.submodule_paths }}" | jq -R 'split(" ")' | jq -c '.')
+            fi
+          else
+            echo "Push trigger: Building changed apps..."
+            MATRIX_STRING='${{ steps.changed-submodules-push.outputs.all_changed_files }}'
+          fi
+          echo "Final build matrix: $MATRIX_STRING"
+          echo "matrix=$MATRIX_STRING" >> $GITHUB_OUTPUT
 
   build-and-publish:
     if: needs.discover.outputs.changed_apps_matrix != '[]'
@@ -80,21 +96,17 @@ jobs:
         run: |
           all_paths_array=($ALL_PATHS)
           all_urls_array=($ALL_URLS)
-
           for i in "${!all_paths_array[@]}"; do
             if [[ "${all_paths_array[$i]}" == "${{ matrix.app_dir }}" ]]; then
               URL_INDEX=$i
               break
             fi
           done
-
           REPO_URL=${all_urls_array[$URL_INDEX]}
           REPO_NAME=$(basename -s .git "$REPO_URL")
           IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${REPO_NAME}:latest"
-
           echo "Building and pushing image for ${{ matrix.app_dir }}"
           echo "Image will be tagged as: ${IMAGE_NAME}"
-
           docker buildx build \
             --push \
             --platform linux/amd64,linux/arm64 \
