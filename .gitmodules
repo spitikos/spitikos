@@ -2,6 +2,7 @@
 	path = api/stats
 	url = git@github.com:ethn1ee/pi-stats.git
 	branch = main
+
 [submodule "homepage"]
 	path = homepage
 	url = git@github.com:ethn1ee/pi-homepage.git
