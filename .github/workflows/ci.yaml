@@ -1,0 +1,73 @@
+name: Monorepo CI - Build and Publish Changed Submodules
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/**' # Only run if something inside the 'apps' directory changes
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          # We need to fetch the full history to compare commits
+          # and also initialize submodules to get their paths.
+          fetch-depth: 0
+          submodules: true
+
+      - name: Discover all submodule paths
+        id: discover-submodules
+        run: |
+          # This command gets the path of every registered submodule.
+          SUBMODULE_PATHS=$(git submodule--helper list | awk '{print $2}')
+          echo "Discovered submodules: $SUBMODULE_PATHS"
+          echo "submodule_list=$SUBMODULE_PATHS" >> $GITHUB_OUTPUT
+
+      - name: Get Changed Submodule Directories
+        id: changed-submodules
+        uses: tj-actions/changed-files@v44
+        with:
+          # Use the dynamically discovered list of submodule paths.
+          files: ${{ steps.discover-submodules.outputs.submodule_list }}
+
+      - name: Set up Docker Buildx
+        if: steps.changed-submodules.outputs.any_changed == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the GitHub Container Registry
+        if: steps.changed-submodules.outputs.any_changed == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Changed Docker Images
+        if: steps.changed-submodules.outputs.any_changed == 'true'
+        strategy:
+          # Create a job for each submodule directory that has changed.
+          matrix:
+            app_dir: ${{ fromJson(steps.changed-submodules.outputs.all_changed_files) }}
+        run: |
+          # Create a descriptive image name from the submodule path.
+          # e.g., "apps/api/stats" becomes "api-stats"
+          IMAGE_NAME_SUFFIX=$(echo "${{ matrix.app_dir }}" | sed 's|apps/||' | sed 's|/|-|g')
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/pi-${IMAGE_NAME_SUFFIX}:latest"
+
+          echo "Building and pushing image for ${{ matrix.app_dir }}"
+          echo "Image will be tagged as: ${IMAGE_NAME}"
+
+          docker buildx build \
+            --push \
+            --platform linux/amd64,linux/arm64 \
+            --tag "${IMAGE_NAME}" \
+            --file "${{ matrix.app_dir }}/Dockerfile" \
+            "${{ matrix.app_dir }}"
