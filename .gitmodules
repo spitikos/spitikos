@@ -6,3 +6,4 @@
 [submodule "homepage"]
 	path = homepage
 	url = git@github.com:ethn1ee/pi-homepage.git
+	branch = main
