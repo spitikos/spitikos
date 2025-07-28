@@ -1,6 +1,7 @@
 name: Monorepo CI - Build and Publish Changed Submodules
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
