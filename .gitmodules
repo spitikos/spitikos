@@ -1,7 +1,4 @@
-[submodule "stats"]
-	path = stats
-	url = git@github.com:ethn1ee/pi-stats.git
-	branch = main
 [submodule "api/stats"]
 	path = api/stats
 	url = git@github.com:ethn1ee/pi-stats.git
+	branch = main

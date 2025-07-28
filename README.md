@@ -1,6 +1,6 @@
 # Pi Homelab
 
-My first Raspberry Pi homelab, powered by k3s.
+Monorepo of my Raspberry Pi Kubernetes cluster
 
 ## Quick Links
 
