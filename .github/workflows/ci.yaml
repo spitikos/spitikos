@@ -1,7 +1,6 @@
 name: Monorepo CI - Build and Publish Changed Submodules
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
@@ -9,26 +8,23 @@ on:
       - 'apps/**' # Only run if something inside the 'apps' directory changes
 
 jobs:
-  build-and-publish:
+  # This job discovers which applications (submodules) have changed.
+  discover:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
+    outputs:
+      # This output will be a JSON array string, e.g., '["apps/homepage", "apps/api/stats"]'
+      # It will be used by the next job to create the matrix.
+      changed_apps_matrix: ${{ steps.changed-submodules.outputs.all_changed_files }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          # We need to fetch the full history to compare commits
-          # and also initialize submodules to get their paths.
           fetch-depth: 0
           submodules: true
 
       - name: Discover all submodule paths
         id: discover-submodules
         run: |
-          # This command reads the .gitmodules file to get the path of every registered submodule.
-          # This is the most robust way to get the list.
           SUBMODULE_PATHS=$(git config -f .gitmodules --get-regexp path | awk '{ print $2 }')
           echo "Discovered submodules: $SUBMODULE_PATHS"
           echo "submodule_list=$SUBMODULE_PATHS" >> $GITHUB_OUTPUT
@@ -37,27 +33,37 @@ jobs:
         id: changed-submodules
         uses: tj-actions/changed-files@v44
         with:
-          # Use the dynamically discovered list of submodule paths.
           files: ${{ steps.discover-submodules.outputs.submodule_list }}
 
+  # This job builds and publishes only the applications that were identified by the 'discover' job.
+  build-and-publish:
+    # This job will only run if the 'discover' job found changes.
+    if: needs.discover.outputs.changed_apps_matrix != '[]'
+    needs: discover # This job depends on the 'discover' job to finish first.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      # The matrix is now correctly defined at the job level.
+      # It is built from the JSON output of the 'discover' job.
+      matrix:
+        app_dir: ${{ fromJson(needs.discover.outputs.changed_apps_matrix) }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Set up Docker Buildx
-        if: steps.changed-submodules.outputs.any_changed == 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to the GitHub Container Registry
-        if: steps.changed-submodules.outputs.any_changed == 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push Changed Docker Images
-        if: steps.changed-submodules.outputs.any_changed == 'true'
-        strategy:
-          # Create a job for each submodule directory that has changed.
-          matrix:
-            app_dir: ${{ fromJson(steps.changed-submodules.outputs.all_changed_files) }}
+      - name: Build and Push Docker Image
         run: |
           # Create a descriptive image name from the submodule path.
           # e.g., "apps/api/stats" becomes "api-stats"
