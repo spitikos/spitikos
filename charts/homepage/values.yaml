@@ -1,5 +1,3 @@
-# Values for the homepage application.
-
 replicaCount: 1
 
 image:
@@ -7,16 +5,12 @@ image:
   pullPolicy: Always
   tag: "latest"
 
-# imagePullSecrets:
-#   - name: ghcr-cred
-
 service:
   type: ClusterIP
   port: 80
-  targetPort: 3000 # Default Next.js port
+  targetPort: 3000
 
 ingress:
   enabled: true
   host: pi.taehoonlee.dev
-  # This will be the root path
   path: /

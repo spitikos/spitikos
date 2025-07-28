@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/ethn1ee/pi-stats
+  repository: ghcr.io/ethn1ee/pi-api-stats
   pullPolicy: Always
   tag: "latest"
 
