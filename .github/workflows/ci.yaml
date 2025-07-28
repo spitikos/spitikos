@@ -12,9 +12,7 @@ jobs:
   discover:
     runs-on: ubuntu-latest
     outputs:
-      # Output a simple, space-separated list of changed submodule paths
-      changed_paths: ${{ steps.changed-submodules.outputs.all_changed_files_in_a_single_string }}
-      # Output all submodule paths and URLs for the next job to use
+      changed_apps_matrix: ${{ steps.changed-submodules.outputs.all_changed_files }}
       all_paths: ${{ steps.discover-submodules.outputs.submodule_paths }}
       all_urls: ${{ steps.discover-submodules.outputs.submodule_urls }}
     steps:
@@ -27,11 +25,14 @@ jobs:
       - name: Discover all submodule paths and URLs
         id: discover-submodules
         run: |
-          # Get all paths and URLs, format them as single-line, space-separated strings
           SUBMODULE_PATHS=$(git config -f .gitmodules --get-regexp path | awk '{ print $2 }' | tr '\n' ' ')
           SUBMODULE_URLS=$(git config -f .gitmodules --get-regexp url | awk '{ print $2 }' | tr '\n' ' ')
           echo "submodule_paths=$SUBMODULE_PATHS" >> $GITHUB_OUTPUT
           echo "submodule_urls=$SUBMODULE_URLS" >> $GITHUB_OUTPUT
+          
+          echo "--- All Discovered Submodules ---"
+          echo "$SUBMODULE_PATHS"
+          echo "---------------------------------"
 
       - name: Get Changed Submodule Directories
         id: changed-submodules
@@ -39,8 +40,15 @@ jobs:
         with:
           files: ${{ steps.discover-submodules.outputs.submodule_paths }}
 
+      - name: Print Changed Submodules
+        if: steps.changed-submodules.outputs.any_changed == 'true'
+        run: |
+          echo "--- Changed Submodules ---"
+          echo "${{ steps.changed-submodules.outputs.all_changed_files }}"
+          echo "--------------------------"
+
   build-and-publish:
-    if: needs.discover.outputs.changed_paths != ''
+    if: needs.discover.outputs.changed_apps_matrix != '[]'
     needs: discover
     runs-on: ubuntu-latest
     permissions:
@@ -48,11 +56,12 @@ jobs:
       packages: write
     strategy:
       matrix:
-        # Create a job for each changed submodule path
-        app_dir: ${{ fromJson(format('[{0}]', needs.discover.outputs.changed_paths)) }}
+        app_dir: ${{ fromJson(needs.discover.outputs.changed_apps_matrix) }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -65,21 +74,21 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push Docker Image
+        env:
+          ALL_PATHS: ${{ needs.discover.outputs.all_paths }}
+          ALL_URLS: ${{ needs.discover.outputs.all_urls }}
         run: |
-          # Convert the full lists of paths and URLs into shell arrays
-          ALL_PATHS=(${all_paths})
-          ALL_URLS=(${all_urls})
+          all_paths_array=($ALL_PATHS)
+          all_urls_array=($ALL_URLS)
 
-          # Find the index of the current app_dir in the paths array
-          for i in "${!ALL_PATHS[@]}"; do
-            if [[ "${ALL_PATHS[$i]}" == "${{ matrix.app_dir }}" ]]; then
+          for i in "${!all_paths_array[@]}"; do
+            if [[ "${all_paths_array[$i]}" == "${{ matrix.app_dir }}" ]]; then
               URL_INDEX=$i
               break
             fi
           done
 
-          # Get the corresponding URL using the found index
-          REPO_URL=${ALL_URLS[$URL_INDEX]}
+          REPO_URL=${all_urls_array[$URL_INDEX]}
           REPO_NAME=$(basename -s .git "$REPO_URL")
           IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${REPO_NAME}:latest"
 
@@ -92,6 +101,3 @@ jobs:
             --tag "${IMAGE_NAME}" \
             --file "${{ matrix.app_dir }}/Dockerfile" \
             "${{ matrix.app_dir }}"
-        env:
-          all_paths: ${{ needs.discover.outputs.all_paths }}
-          all_urls: ${{ needs.discover.outputs.all_urls }}
