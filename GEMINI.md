@@ -23,6 +23,7 @@
 
 **Kubernetes Rules:**
 
+- **Helm:** Use Helm to package and manage all Kubernetes resources.
 - **Manifest Convention:**
     - **Directory Structure:** `app/<namespace>/`
     - **File Name:** `<kind>.yaml` (e.g., `service-account.yaml`)

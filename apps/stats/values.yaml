@@ -1,0 +1,17 @@
+replicaCount: 1
+
+image:
+  repository: ethn1ee/pi-stats
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  host: pi.taehoonlee.dev
+  path: /api/stats
+  pathType: Prefix

@@ -5,12 +5,10 @@ metadata:
   namespace: kubernetes-dashboard
 spec:
   entryPoints:
-    - web
+    - websecure
   routes:
-  - kind: Rule
-    match: Host(`kube.taehoonlee.dev`)
-    services:
-      - name: kubernetes-dashboard-kong-proxy
-        port: 443
-        scheme: https
-        serversTransport: kubernetes-dashboard-servers-transport
+    - match: Host(`kube.taehoonlee.dev`)
+      kind: Rule
+      services:
+        - name: kubernetes-dashboard-kong-proxy
+          port: 443

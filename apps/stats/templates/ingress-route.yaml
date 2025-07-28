@@ -1,0 +1,32 @@
+{{- if .Values.ingress.enabled -}}
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ .Release.Name }}-ingress-route
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`{{ .Values.ingress.host }}`) && PathPrefix(`{{ .Values.ingress.path }}`)
+      kind: Rule
+      services:
+        - name: {{ .Release.Name }}-service
+          port: {{ .Values.service.port }}
+          scheme: http
+      middlewares:
+        - name: {{ .Release.Name }}-middleware
+          namespace: {{ .Release.Namespace }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ .Release.Name }}-middleware
+  namespace: {{ .Release.Namespace }}
+spec:
+  stripPrefix:
+    prefixes:
+      - {{ .Values.ingress.path }}
+{{- end }}
