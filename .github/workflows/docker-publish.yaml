@@ -1,4 +1,4 @@
-name: Reusable Docker Build and Publish
+name: Docker Build and Publish
 
 on:
   workflow_call:
