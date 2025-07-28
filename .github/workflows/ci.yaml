@@ -12,7 +12,11 @@ jobs:
   discover:
     runs-on: ubuntu-latest
     outputs:
-      changed_apps_matrix: ${{ steps.changed-submodules.outputs.all_changed_files }}
+      # Output a simple, space-separated list of changed submodule paths
+      changed_paths: ${{ steps.changed-submodules.outputs.all_changed_files_in_a_single_string }}
+      # Output all submodule paths and URLs for the next job to use
+      all_paths: ${{ steps.discover-submodules.outputs.submodule_paths }}
+      all_urls: ${{ steps.discover-submodules.outputs.submodule_urls }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -23,23 +27,20 @@ jobs:
       - name: Discover all submodule paths and URLs
         id: discover-submodules
         run: |
-          # Create a JSON array of objects, each containing the path and URL for a submodule.
-          # This is a more robust way to pass data between jobs.
-          SUBMODULE_JSON=$(git config -f .gitmodules --get-regexp 'path|url' | \
-            awk '{key=$1; value=$2; if (key ~ /path$/) {path=value} else if (key ~ /url$/) {url=value; printf "{\"path\":\"" path "\",\"url\":\"" url "\"},"}}' | \
-            sed 's/,$//' | awk '{print "["$0"]"}')
-          echo "Discovered submodules: $SUBMODULE_JSON"
-          echo "submodule_list=$SUBMODULE_JSON" >> $GITHUB_OUTPUT
+          # Get all paths and URLs, format them as single-line, space-separated strings
+          SUBMODULE_PATHS=$(git config -f .gitmodules --get-regexp path | awk '{ print $2 }' | tr '\n' ' ')
+          SUBMODULE_URLS=$(git config -f .gitmodules --get-regexp url | awk '{ print $2 }' | tr '\n' ' ')
+          echo "submodule_paths=$SUBMODULE_PATHS" >> $GITHUB_OUTPUT
+          echo "submodule_urls=$SUBMODULE_URLS" >> $GITHUB_OUTPUT
 
       - name: Get Changed Submodule Directories
         id: changed-submodules
         uses: tj-actions/changed-files@v44
         with:
-          files_from_source_file: ${{ steps.discover-submodules.outputs.submodule_list }}
-          source_file_path_filter: "path"
+          files: ${{ steps.discover-submodules.outputs.submodule_paths }}
 
   build-and-publish:
-    if: needs.discover.outputs.changed_apps_matrix != '[]'
+    if: needs.discover.outputs.changed_paths != ''
     needs: discover
     runs-on: ubuntu-latest
     permissions:
@@ -47,7 +48,8 @@ jobs:
       packages: write
     strategy:
       matrix:
-        app: ${{ fromJson(needs.discover.outputs.changed_apps_matrix) }}
+        # Create a job for each changed submodule path
+        app_dir: ${{ fromJson(format('[{0}]', needs.discover.outputs.changed_paths)) }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -64,16 +66,32 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          # Extract the repository name from the URL (e.g., "git@github.com:user/pi-stats.git" -> "pi-stats")
-          REPO_NAME=$(basename -s .git ${{ matrix.app.url }})
+          # Convert the full lists of paths and URLs into shell arrays
+          ALL_PATHS=(${all_paths})
+          ALL_URLS=(${all_urls})
+
+          # Find the index of the current app_dir in the paths array
+          for i in "${!ALL_PATHS[@]}"; do
+            if [[ "${ALL_PATHS[$i]}" == "${{ matrix.app_dir }}" ]]; then
+              URL_INDEX=$i
+              break
+            fi
+          done
+
+          # Get the corresponding URL using the found index
+          REPO_URL=${ALL_URLS[$URL_INDEX]}
+          REPO_NAME=$(basename -s .git "$REPO_URL")
           IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${REPO_NAME}:latest"
 
-          echo "Building and pushing image for ${{ matrix.app.path }}"
+          echo "Building and pushing image for ${{ matrix.app_dir }}"
           echo "Image will be tagged as: ${IMAGE_NAME}"
 
           docker buildx build \
             --push \
             --platform linux/amd64,linux/arm64 \
             --tag "${IMAGE_NAME}" \
-            --file "${{ matrix.app.path }}/Dockerfile" \
-            "${{ matrix.app.path }}"
+            --file "${{ matrix.app_dir }}/Dockerfile" \
+            "${{ matrix.app_dir }}"
+        env:
+          all_paths: ${{ needs.discover.outputs.all_paths }}
+          all_urls: ${{ needs.discover.outputs.all_urls }}
