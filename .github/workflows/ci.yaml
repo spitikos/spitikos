@@ -26,8 +26,9 @@ jobs:
       - name: Discover all submodule paths
         id: discover-submodules
         run: |
-          # This command gets the path of every registered submodule.
-          SUBMODULE_PATHS=$(git submodule--helper list | awk '{print $2}')
+          # This command reads the .gitmodules file to get the path of every registered submodule.
+          # This is the most robust way to get the list.
+          SUBMODULE_PATHS=$(git config -f .gitmodules --get-regexp path | awk '{ print $2 }')
           echo "Discovered submodules: $SUBMODULE_PATHS"
           echo "submodule_list=$SUBMODULE_PATHS" >> $GITHUB_OUTPUT
 
