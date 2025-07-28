@@ -1,20 +1,17 @@
 name: Monorepo CI - Build and Publish Changed Submodules
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
     paths:
-      - 'apps/**' # Only run if something inside the 'apps' directory changes
+      - 'apps/**'
+  workflow_dispatch:
 
 jobs:
-  # This job discovers which applications (submodules) have changed.
   discover:
     runs-on: ubuntu-latest
     outputs:
-      # This output will be a JSON array string, e.g., '["apps/homepage", "apps/api/stats"]'
-      # It will be used by the next job to create the matrix.
       changed_apps_matrix: ${{ steps.changed-submodules.outputs.all_changed_files }}
     steps:
       - name: Checkout Repository
@@ -23,33 +20,34 @@ jobs:
           fetch-depth: 0
           submodules: true
 
-      - name: Discover all submodule paths
+      - name: Discover all submodule paths and URLs
         id: discover-submodules
         run: |
-          SUBMODULE_PATHS=$(git config -f .gitmodules --get-regexp path | awk '{ print $2 }')
-          echo "Discovered submodules: $SUBMODULE_PATHS"
-          echo "submodule_list=$SUBMODULE_PATHS" >> $GITHUB_OUTPUT
+          # Create a JSON array of objects, each containing the path and URL for a submodule.
+          # This is a more robust way to pass data between jobs.
+          SUBMODULE_JSON=$(git config -f .gitmodules --get-regexp 'path|url' | \
+            awk '{key=$1; value=$2; if (key ~ /path$/) {path=value} else if (key ~ /url$/) {url=value; printf "{\"path\":\"" path "\",\"url\":\"" url "\"},"}}' | \
+            sed 's/,$//' | awk '{print "["$0"]"}')
+          echo "Discovered submodules: $SUBMODULE_JSON"
+          echo "submodule_list=$SUBMODULE_JSON" >> $GITHUB_OUTPUT
 
       - name: Get Changed Submodule Directories
         id: changed-submodules
         uses: tj-actions/changed-files@v44
         with:
-          files: ${{ steps.discover-submodules.outputs.submodule_list }}
+          files_from_source_file: ${{ steps.discover-submodules.outputs.submodule_list }}
+          source_file_path_filter: "path"
 
-  # This job builds and publishes only the applications that were identified by the 'discover' job.
   build-and-publish:
-    # This job will only run if the 'discover' job found changes.
     if: needs.discover.outputs.changed_apps_matrix != '[]'
-    needs: discover # This job depends on the 'discover' job to finish first.
+    needs: discover
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     strategy:
-      # The matrix is now correctly defined at the job level.
-      # It is built from the JSON output of the 'discover' job.
       matrix:
-        app_dir: ${{ fromJson(needs.discover.outputs.changed_apps_matrix) }}
+        app: ${{ fromJson(needs.discover.outputs.changed_apps_matrix) }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -66,17 +64,16 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          # Create a descriptive image name from the submodule path.
-          # e.g., "apps/api/stats" becomes "api-stats"
-          IMAGE_NAME_SUFFIX=$(echo "${{ matrix.app_dir }}" | sed 's|apps/||' | sed 's|/|-|g')
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/pi-${IMAGE_NAME_SUFFIX}:latest"
+          # Extract the repository name from the URL (e.g., "git@github.com:user/pi-stats.git" -> "pi-stats")
+          REPO_NAME=$(basename -s .git ${{ matrix.app.url }})
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${REPO_NAME}:latest"
 
-          echo "Building and pushing image for ${{ matrix.app_dir }}"
+          echo "Building and pushing image for ${{ matrix.app.path }}"
           echo "Image will be tagged as: ${IMAGE_NAME}"
 
           docker buildx build \
             --push \
             --platform linux/amd64,linux/arm64 \
             --tag "${IMAGE_NAME}" \
-            --file "${{ matrix.app_dir }}/Dockerfile" \
-            "${{ matrix.app_dir }}"
+            --file "${{ matrix.app.path }}/Dockerfile" \
+            "${{ matrix.app.path }}"
