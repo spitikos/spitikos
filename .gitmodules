@@ -1,6 +1,6 @@
 [submodule "api/stats"]
 	path = apps/api/stats
-	url = git@github.com:ethn1ee/pi-stats.git
+	url = git@github.com:ethn1ee/pi-api-stats.git
 	branch = main
 
 [submodule "homepage"]
