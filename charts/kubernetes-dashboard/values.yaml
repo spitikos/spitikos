@@ -1,0 +1,13 @@
+# passed to the official kubernetes-dashboard subchart.
+kubernetes-dashboard:
+  service:
+    externalPort: 443
+
+ingress:
+  enabled: true
+  host: pi.taehoonlee.dev
+  path: /kubernetes-dashboard
+
+serviceAccount:
+  create: false
+  name: admin-user

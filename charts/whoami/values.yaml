@@ -1,17 +1,16 @@
 replicaCount: 1
 
 image:
-  repository: ethn1ee/pi-stats
+  repository: traefik/whoami
   pullPolicy: IfNotPresent
   tag: "latest"
 
 service:
   type: ClusterIP
   port: 80
-  targetPort: 8080
+  targetPort: 80
 
 ingress:
   enabled: true
   host: pi.taehoonlee.dev
-  path: /api/stats
-  pathType: Prefix
+  path: /whoami
