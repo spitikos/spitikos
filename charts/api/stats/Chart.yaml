@@ -9,4 +9,4 @@ icon: https://raw.githubusercontent.com/ethn1ee/pi/main/icon.svg
 dependencies:
   - name: common
     version: "0.1.0"
-    repository: "file://../../common"
+    repository: "file://../../_common"

@@ -2,6 +2,28 @@
 
 Monorepo of my Raspberry Pi Kubernetes cluster
 
-## Quick Links
+## Project Structure
 
-[![Cloudflare Dashboard](https://img.shields.io/badge/Cloudflare-Dashboard-F38020?style=for-the-badge&logo=cloudflare)](https://dash.cloudflare.com/ed609d8fcbc996ed25c6ae9e33ae9188/home/domains)
+```sh
+.
+├── apps            # git submodules to apps deployed in the pi cluster
+├── charts          # helm charts
+├── docs            # documentation of the pi setup and architecture
+├── GEMINI.md       # Gemini agent config
+├── Makefile
+└── README.md
+```
+
+## Apps
+
+All apps deployed in this pi cluster exist as microservices, deployed using Helm charts.
+
+### Routes
+
+```sh
+ /
+├── /kube-dashboard
+├── /api
+│  ├── /stats
+
+```

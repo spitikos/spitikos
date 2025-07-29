@@ -14,8 +14,8 @@ Run the following command on the Raspberry Pi:
 curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable=traefik" sh -s - --write-kubeconfig-mode 644
 ```
 
-*   `INSTALL_K3S_EXEC="--disable=traefik"`: Prevents the default Traefik from being installed.
-*   `--write-kubeconfig-mode 644`: Makes the generated kubeconfig file readable by any user, simplifying the process of copying it to your local machine.
+-   `INSTALL_K3S_EXEC="--disable=traefik"`: Prevents the default Traefik from being installed.
+-   `--write-kubeconfig-mode 644`: Makes the generated kubeconfig file readable by any user, simplifying the process of copying it to your local machine.
 
 ### Verification
 

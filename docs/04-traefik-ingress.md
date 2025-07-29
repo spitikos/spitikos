@@ -34,9 +34,9 @@ The installation is managed from your **local machine**.
 
 ### Key Configuration Parameters Explained
 
-*   `--set="service.type=NodePort"`: This is the crucial setting that exposes Traefik on a high-numbered port on the Raspberry Pi's own network interface. This allows the `cloudflared` service (running on the host) to connect to it.
-*   `--set="ports.web.nodePort=30080"`: We explicitly set the `NodePort` to a predictable value (`30080`). This is the port that `cloudflared` is configured to forward traffic to.
-*   `--set="entryPoints.websecure.address="`: We disable the `websecure` (HTTPS) entrypoint by setting its address to an empty string. This is because TLS is terminated at the Cloudflare edge, and traffic within our cluster is plain HTTP. This prevents port conflicts and simplifies the setup.
+-   `--set="service.type=NodePort"`: This is the crucial setting that exposes Traefik on a high-numbered port on the Raspberry Pi's own network interface. This allows the `cloudflared` service (running on the host) to connect to it.
+-   `--set="ports.web.nodePort=30080"`: We explicitly set the `NodePort` to a predictable value (`30080`). This is the port that `cloudflared` is configured to forward traffic to.
+-   `--set="entryPoints.websecure.address="`: We disable the `websecure` (HTTPS) entrypoint by setting its address to an empty string. This is because TLS is terminated at the Cloudflare edge, and traffic within our cluster is plain HTTP. This prevents port conflicts and simplifies the setup.
 
 ## 3. Verification
 

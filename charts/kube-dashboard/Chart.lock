@@ -3,7 +3,7 @@ dependencies:
   repository: https://kubernetes.github.io/dashboard/
   version: 7.5.0
 - name: common
-  repository: file://../common
+  repository: file://../_common
   version: 0.1.0
-digest: sha256:bc756af897f414ae0e5dc8c3375485baf45db13fa7dbe7ac3f983272f6ffb192
-generated: "2025-07-28T19:54:46.531611-04:00"
+digest: sha256:eca74bc52e766d666db5b76c3f51581571f6e311da66419d894b517c7ef2f271
+generated: "2025-07-28T20:26:15.950543-04:00"
