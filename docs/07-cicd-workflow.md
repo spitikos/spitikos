@@ -21,19 +21,28 @@ The CI/CD pipeline is built on a pattern of **reusable workflows**.
 -   **Purpose:** Provides a generic, reusable set of steps for building a multi-platform (`linux/amd64`, `linux/arm64`) Docker image and publishing it to the GitHub Container Registry (ghcr.io).
 -   **Trigger:** `workflow_call`. It is designed to be called by other workflows, not to run on its own.
 
-### `sync-submodule.yaml` (Reusable Workflow)
-
--   **Location:** `.github/workflows/sync-submodule.yaml` in the parent `pi` repository.
--   **Purpose:** Automates the second step of the submodule workflow. After a submodule has been updated, this workflow checks out the parent repository, updates the submodule pointer to the latest commit on its `main` branch, and pushes the change.
--   **Trigger:** `workflow_dispatch`. It is designed to be triggered remotely via an API call from a submodule's CI.
-
 ### Application CI (Caller Workflows)
 
 -   **Location:** Each submodule (e.g., `apps/homepage/.github/workflows/ci.yaml`) has its own simple CI workflow.
--   **Purpose:** This workflow orchestrates the build and update process.
+-   **Purpose:** This workflow triggers the build of a new Docker image whenever code is pushed to the submodule.
 -   **Steps:**
     1.  **Trigger:** Runs on a `push` to the submodule's `main` branch.
-    2.  **Job 1: `build-and-publish`:** It `uses:` the `docker-publish.yaml` workflow to build and publish its own Docker image.
-    3.  **Job 2: `update-pointer`:** After the build succeeds, it makes an API call to trigger the `sync-submodule.yaml` workflow in the parent repository, telling it to update the pointer.
+    2.  **Job: `build-and-publish`:** It `uses:` the `docker-publish.yaml` workflow from the parent repository to build and publish its own Docker image.
 
-This decentralized approach is highly scalable. To add a new application, you simply create a new submodule and add a similar two-job CI workflow to it, without ever needing to modify the parent repository's CI configuration.
+## 3. Manual Submodule Update Workflow
+
+After a submodule's CI has successfully published a new image, the pointer in the parent `pi` repository must be updated manually.
+
+1.  **Fetch Changes:** In your local clone of the `pi` repository, fetch the latest changes for all submodules:
+    ```bash
+    git submodule update --remote
+    ```
+2.  **Review and Commit:** Running `git status` will show the submodules that have new commits (e.g., `modified: apps/homepage (new commits)`).
+3.  **Commit the Pointer:** Stage the change to the submodule pointer and commit it to the parent repository.
+    ```bash
+    git add apps/homepage
+    git commit -m "feat(homepage): Update to latest version"
+    git push
+    ```
+
+This manual but deliberate process ensures that the parent repository is always pinned to a specific, tested version of each application.

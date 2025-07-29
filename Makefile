@@ -17,3 +17,6 @@ dash-token:
 sync-modules:
 	@echo "--- Syncing submodules to latest commit ---"
 	@git submodule update --init --recursive --remote
+	@git add .
+	@git commit -m "bump submodules to latest"
+	@git push
