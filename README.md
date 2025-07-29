@@ -18,12 +18,16 @@ Monorepo of my Raspberry Pi Kubernetes cluster
 
 All apps deployed in this pi cluster exist as microservices, deployed using Helm charts.
 
-### Routes
+## Pages
 
-```sh
- /
-├── /kube-dashboard
-├── /api
-│  ├── /stats
+| Route           | Description          |
+| --------------- | -------------------- |
+| /               | Homepage             |
+| /kube-dashboard | Kubernetes Dashboard |
 
-```
+## API
+
+| Route       | Description                                                |
+| ----------- | ---------------------------------------------------------- |
+| /api/whoami | [Traefik whoami](https://github.com/traefik/whoami) server |
+| /api/stats  | Pi resource stats (cpu, memory, temperature, etc.)         |
