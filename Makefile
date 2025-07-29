@@ -15,5 +15,5 @@ dash-token:
 	@kubectl create token -n kube-dashboard admin-user
 
 sync-modules:
-	@echo "--- Syncing submodules ---"
-	@git submodule update --init --recursive
+	@echo "--- Syncing submodules to latest commit ---"
+	@git submodule update --init --recursive --remote
