@@ -6,7 +6,7 @@ kubernetes-dashboard:
 ingress:
   enabled: true
   host: pi.taehoonlee.dev
-  path: /kubernetes-dashboard
+  path: /kube-dashboard
 
 serviceAccount:
   create: false

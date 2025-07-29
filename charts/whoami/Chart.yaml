@@ -1,6 +1,6 @@
 apiVersion: v2
 icon: https://raw.githubusercontent.com/ethn1ee/pi/main/icon.svg
-name: whoami
+name: misc-whoami
 description: A Helm chart for deploying the whoami application.
 type: application
 version: 0.1.0

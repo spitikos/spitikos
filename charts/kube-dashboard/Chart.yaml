@@ -1,10 +1,10 @@
 apiVersion: v2
-name: kubernetes-dashboard-wrapper
+name: kube-dashboard
 description: A wrapper chart for deploying the official Kubernetes Dashboard with custom ingress.
 type: application
 version: 0.1.0
 appVersion: "3.0.0"
-icon: https://raw.githubusercontent.com/kubernetes/dashboard/master/src/app/backend/dashboard/assets/images/kubernetes-logo.png
+icon: https://raw.githubusercontent.com/ethn1ee/pi/main/icon.svg
 
 dependencies:
   - name: kubernetes-dashboard

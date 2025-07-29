@@ -1,0 +1,7 @@
+{{- include "common.deployment" . | nindent 0 }}
+---
+{{- include "common.service" . | nindent 0 }}
+---
+{{- include "common.ingress-route" . | nindent 0 }}
+---
+{{- include "common.middleware" . | nindent 0 }}
