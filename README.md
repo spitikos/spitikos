@@ -6,14 +6,14 @@ Monorepo of my Raspberry Pi Kubernetes cluster
 
 Visit [pi.taehoonlee.dev](https://pi.taehoonlee.dev). All apps deployed in this pi cluster exist as microservices, deployed using Helm charts. All pages and APIs are publicly available.
 
-## Pages
+### Pages
 
 | Route                                                         | Description          |
 | ------------------------------------------------------------- | -------------------- |
 | [`/`](https://pi.taehoonlee.dev)                              | Homepage             |
 | [`/kube-dashboard`](https://pi.taehoonlee.dev/kube-dashboard) | Kubernetes Dashboard |
 
-## API
+### API
 
 | Route                                                 | Description                                                |
 | ----------------------------------------------------- | ---------------------------------------------------------- |
