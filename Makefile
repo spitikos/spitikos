@@ -13,3 +13,7 @@ helm-deps:
 dash-token:
 	@echo "--- Generating token for Kubernetes dashboard ---"
 	@kubectl create token -n kube-dashboard admin-user
+
+sync-modules:
+	@echo "--- Syncing submodules ---"
+	@git submodule update --init --recursive

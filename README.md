@@ -8,17 +8,17 @@ Visit [pi.taehoonlee.dev](https://pi.taehoonlee.dev). All apps deployed in this 
 
 ### Pages
 
-| Route                                                         | Description          |
-| ------------------------------------------------------------- | -------------------- |
-| [`/`](https://pi.taehoonlee.dev)                              | Homepage             |
-| [`/kube-dashboard`](https://pi.taehoonlee.dev/kube-dashboard) | Kubernetes Dashboard |
+| Route                                                         | Description          | Repo                                         |
+| ------------------------------------------------------------- | -------------------- | -------------------------------------------- |
+| [`/`](https://pi.taehoonlee.dev)                              | Homepage             | [🔗](https://github.com/ethn1ee/pi-homepage) |
+| [`/kube-dashboard`](https://pi.taehoonlee.dev/kube-dashboard) | Kubernetes Dashboard | -                                            |
 
 ### API
 
-| Route                                                 | Description                                                |
-| ----------------------------------------------------- | ---------------------------------------------------------- |
-| [`/api/stats`](https://pi.taehoonlee.dev/api/stats)   | Pi resource stats (cpu, memory, temperature, etc.)         |
-| [`/api/whoami`](https://pi.taehoonlee.dev/api/whoami) | [Traefik whoami](https://github.com/traefik/whoami) server |
+| Route                                                 | Description                                                | Repo                                           |
+| ----------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------- |
+| [`/api/stats`](https://pi.taehoonlee.dev/api/stats)   | Pi resource stats (cpu, memory, temperature, etc.)         | [🔗](https://github.com/ethn1ee/pi-api-stats)  |
+| [`/api/whoami`](https://pi.taehoonlee.dev/api/whoami) | [Traefik whoami](https://github.com/traefik/whoami) server | [🔗](https://github.com/ethn1ee/pi-api-whoami) |
 
 ## Project Structure
 
