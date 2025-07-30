@@ -12,11 +12,12 @@ dash-token: ## Generate token for Kubernetes dashboard
 	@echo "--- Generating token for Kubernetes dashboard ---"
 	@kubectl create token -n kube-dashboard admin-user
 
-drain: ## Safely drain the Kubernetes node before shutdown
+pi-off: ## Drain the Kubernetes node and shutdown pi
 	@echo "--- Draining node ---"
 	@kubectl drain pi --ignore-daemonsets --delete-emptydir-data
+	@ssh ethantlee@pi.local "sudo poweroff"
 
-uncordon: ## Mark the Kubernetes node as schedulable to resume workloads
+pi-on: ## Mark the Kubernetes node as schedulable to resume workloads
 	@echo "--- Uncordoning node ---"
 	@kubectl uncordon pi
 
