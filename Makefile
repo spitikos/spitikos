@@ -1,30 +1,26 @@
 .PHONY: help helm-deps dashboard-token drain-node uncordon-node
 
-help:
-	@echo "Available targets:"
-	@echo "  helm-deps         - Update Helm dependencies for all charts in the 'charts/' directory."
-	@echo "  helm-install-all  - Install all Helm charts based on their directory name as the namespace."
-	@echo "  dashboard-token   - Generate token for Kubernetes dashboard."
-	@echo "  drain-node        - Safely drain the Kubernetes node before shutdown."
-	@echo "  uncordon-node     - Mark the Kubernetes node as schedulable to resume workloads."
 
-helm-deps:
+help: ## Print help
+	@awk 'BEGIN {FS=":.*##";printf"Makefile\n\nUsage:\n  make [command]\n\nAvailable Commands:\n"}/^[a-zA-Z_0-9-]+:.*?##/{printf"  %-40s%s\n",$$1,$$2}/^##@/{printf"\n%s\n",substr($$0,5)}' $(MAKEFILE_LIST)
+
+helm-deps: ## Update Helm dependencies for all charts
 	@echo "--- Updating Helm dependencies for all charts ---"
 	@find ./charts -name "Chart.yaml" -execdir helm dependency update . \;
 
-dash-token:
+dash-token: ## Generate token for Kubernetes dashboard
 	@echo "--- Generating token for Kubernetes dashboard ---"
 	@kubectl create token -n kube-dashboard admin-user
 
-drain-node:
-	@echo "--- Draining node 'pi' ---"
+drain: ## Safely drain the Kubernetes node before shutdown
+	@echo "--- Draining node ---"
 	@kubectl drain pi --ignore-daemonsets --delete-emptydir-data
 
-uncordon-node:
-	@echo "--- Uncordoning node 'pi' ---"
+uncordon: ## Mark the Kubernetes node as schedulable to resume workloads
+	@echo "--- Uncordoning node ---"
 	@kubectl uncordon pi
 
-sync-modules:
+sync-modules: ## Sync submodules to latest commit
 	@echo "--- Syncing submodules to latest commit ---"
 	@git submodule update --init --recursive --remote
 	@git add .
