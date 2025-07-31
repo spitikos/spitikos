@@ -52,7 +52,7 @@ jobs:
   update-chart:
     name: Update Chart
     runs-on: ubuntu-latest
-    needs: build-image
+    needs: docker-publish
     permissions:
       contents: write
 
