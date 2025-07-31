@@ -1,5 +1,4 @@
-# This key is important. All values under it are passed
-# directly to the official 'traefik' subchart.
+# passed to the official 'traefik' subchart.
 traefik:
   dashboard:
     enabled: true
@@ -7,9 +6,8 @@ traefik:
     insecure: true
   service:
     type: NodePort
-  ports:
-    web:
-      nodePort: 30080
+    nodePorts:
+      web: 30080
   entryPoints:
     websecure:
       address: ""
