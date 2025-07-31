@@ -1,9 +1,9 @@
 [submodule "api/stats"]
 	path = apps/api/stats
-	url = git@github.com:ethn1ee/pi-api-stats.git
+	url = https://github.com/ethn1ee/pi-api-stats.git
 	branch = main
 
 [submodule "homepage"]
 	path = apps/homepage
-	url = git@github.com:ethn1ee/pi-homepage.git
+	url = https://github.com/ethn1ee/pi-homepage.git
 	branch = main

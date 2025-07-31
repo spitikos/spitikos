@@ -1,0 +1,20 @@
+# This key is important. All values under it are passed
+# directly to the official 'traefik' subchart.
+traefik:
+  dashboard:
+    enabled: true
+  api:
+    insecure: true
+  service:
+    type: NodePort
+  ports:
+    web:
+      nodePort: 30080
+  entryPoints:
+    websecure:
+      address: ""
+
+# Values for our custom templates in this chart
+ingress:
+  enabled: true
+  host: traefik-pi.taehoonlee.dev

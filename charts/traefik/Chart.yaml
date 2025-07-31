@@ -1,0 +1,12 @@
+apiVersion: v2
+name: traefik-wrapper
+description: A wrapper chart for deploying Traefik with custom configuration for this project.
+type: application
+version: 0.1.0
+appVersion: "3.5.0" # This should track the version of Traefik being deployed
+
+dependencies:
+  - name: traefik
+    # Using a recent, known-good version of the chart
+    version: "25.0.0"
+    repository: "https://helm.traefik.io/traefik"

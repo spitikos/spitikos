@@ -1,10 +1,12 @@
 {{- if .Values.ingress.enabled -}}
-# --- IngressRoute to expose the dashboard ---
+# --- IngressRoute to expose the Traefik dashboard ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: {{ include "common.fullname" . }}-ingress
+  name: {{ .Release.Name }}-dashboard-ingress
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "traefik.labels" . | nindent 4 }}
 spec:
   entryPoints:
     - web
@@ -12,7 +14,6 @@ spec:
     - match: Host(`{{ .Values.ingress.host }}`)
       kind: Rule
       services:
-        - name: {{ .Release.Name }}-kubernetes-dashboard
-          port: 443
-          serversTransport: {{ include "common.fullname" . }}-skip-verify
+        - name: api@internal
+          kind: TraefikService
 {{- end }}
