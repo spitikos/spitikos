@@ -1,48 +1,48 @@
-# Documentation: CI/CD and Git Workflow
+# Documentation: CI/CD and GitOps Workflow
 
-This document explains the project's CI/CD pipeline and the Git workflow, which are designed for modularity and automation.
+This document explains the project's fully automated CI/CD pipeline, which is designed for modularity and to enable a seamless GitOps workflow with Argo CD.
 
-## 1. Git Submodule Strategy
+## 1. Git Strategy: Submodules and HTTPS
 
-Each application's source code (e.g., `homepage`, `stats` API) is maintained in its own separate Git repository. These repositories are then included in this main `pi` repository as **Git submodules** inside the `apps/` directory.
+Each application's source code (e.g., `homepage`, `stats` API) is maintained in its own separate Git repository. These are included in this main `pi` repository as **Git submodules** inside the `apps/` directory.
 
 -   **Parent Repository (`pi`):** Acts as a "pinboard" or "table of contents." It doesn't contain the application code itself, but rather a pointer to a specific commit in each submodule's repository.
--   **Submodule Repositories:** Are completely independent projects with their own history, CI, and versioning.
+-   **Submodule Repositories:** Are completely independent projects with their own history and CI.
+-   **HTTPS URLs:** The `.gitmodules` file is configured to use public `https://` URLs. This is a critical requirement for Argo CD, as it allows the platform to clone the submodules without needing private SSH keys.
 
-This approach enforces a clean separation of concerns and allows each application to be developed and tested independently.
+## 2. The CI/CD Pipeline: From Code to Live Deployment
 
-## 2. CI/CD with Reusable GitHub Actions
+The pipeline is a chain reaction that starts with a `git push` to a submodule and ends with a live deployment, with no manual intervention required.
 
-The CI/CD pipeline is built on a pattern of **reusable workflows**.
+### Step 1: Application CI (The Trigger)
 
-### `docker-publish.yaml` (Reusable Workflow)
+-   **Location:** Each submodule (e.g., `apps/homepage/.github/workflows/ci.yaml`) has its own CI workflow.
+-   **Trigger:** Runs on a `push` to the submodule's `main` branch.
+-   **Action:** This workflow's sole purpose is to call the reusable `release.yaml` workflow in the parent repository, passing its own specific parameters (like image name and chart path).
 
--   **Location:** `.github/workflows/docker-publish.yaml` in the parent `pi` repository.
--   **Purpose:** Provides a generic, reusable set of steps for building a multi-platform (`linux/amd64`, `linux/arm64`) Docker image and publishing it to the GitHub Container Registry (ghcr.io).
--   **Trigger:** `workflow_call`. It is designed to be called by other workflows, not to run on its own.
+### Step 2: Reusable Release Workflow (`release.yaml`)
 
-### Application CI (Caller Workflows)
+-   **Location:** `.github/workflows/release.yaml` in the parent `pi` repository.
+-   **Purpose:** This is the heart of the CI pipeline. It's a generic, reusable workflow that performs two critical jobs.
 
--   **Location:** Each submodule (e.g., `apps/homepage/.github/workflows/ci.yaml`) has its own simple CI workflow.
--   **Purpose:** This workflow triggers the build of a new Docker image whenever code is pushed to the submodule.
--   **Steps:**
-    1.  **Trigger:** Runs on a `push` to the submodule's `main` branch.
-    2.  **Job: `build-and-publish`:** It `uses:` the `docker-publish.yaml` workflow from the parent repository to build and publish its own Docker image.
+#### Job 1: `docker-publish`
+-   Builds a multi-platform (`linux/amd64`, `linux/arm64`) Docker image for the application.
+-   Tags the image with the short commit SHA of the triggering commit.
+-   Pushes the new image to the GitHub Container Registry (ghcr.io).
 
-## 3. Manual Submodule Update Workflow
+#### Job 2: `update-chart`
+-   This job runs only after `docker-publish` succeeds.
+-   It checks out the parent `pi` repository.
+-   It runs a `sed` command to find the `values.yaml` file for the specific application (e.g., `charts/homepage/values.yaml`).
+-   It replaces the `image.tag` value with the new commit SHA tag from the previous job.
+-   It commits this change directly to the `pi` repository with a message like `ci: deploy homepage version <sha>`.
+-   It pushes the commit to `main`.
 
-After a submodule's CI has successfully published a new image, the pointer in the parent `pi` repository must be updated manually.
+### Step 3: Argo CD (The Deployer)
 
-1.  **Fetch Changes:** In your local clone of the `pi` repository, fetch the latest changes for all submodules:
-    ```bash
-    git submodule update --remote
-    ```
-2.  **Review and Commit:** Running `git status` will show the submodules that have new commits (e.g., `modified: apps/homepage (new commits)`).
-3.  **Commit the Pointer:** Stage the change to the submodule pointer and commit it to the parent repository.
-    ```bash
-    git add apps/homepage
-    git commit -m "feat(homepage): Update to latest version"
-    git push
-    ```
+-   The `git push` from the `update-chart` job is the trigger for the final step.
+-   Argo CD, which is constantly monitoring the `pi` repository, detects this new commit.
+-   Because its sync policy is set to `automated`, it immediately begins a sync process.
+-   It pulls the new Helm chart configuration, renders the templates with the updated image tag, and applies the changes to the cluster.
 
-This manual but deliberate process ensures that the parent repository is always pinned to a specific, tested version of each application.
+The new version of the application is now live. This entire process, from code to deployment, is fully automated.

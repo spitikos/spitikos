@@ -2,50 +2,27 @@
 
 This document covers the installation and configuration of the Traefik Ingress Controller, which is responsible for routing external traffic to the correct services within the Kubernetes cluster.
 
-## 1. Why a Manual Install?
+## 1. Architecture: Declarative Deployment via GitOps
 
-We disabled the k3s-bundled Traefik to allow for a manual installation via Helm. This provides granular control over the configuration, which was necessary to solve port conflicts and correctly integrate with our `cloudflared` setup.
+Traefik is a critical piece of the platform infrastructure. As such, it is managed declaratively using the same GitOps principles as our own applications. We do not install or upgrade it manually with `helm` commands.
 
-## 2. Installation via Helm
+-   **Wrapper Chart:** The configuration is defined in a dedicated **wrapper chart** located at `charts/traefik`. This chart includes the official `traefik/traefik` chart as a dependency.
+-   **Declarative Configuration:** All configuration is defined in the `charts/traefik/values.yaml` file. This file contains the specific settings required for our architecture.
+-   **GitOps Management:** The entire Traefik deployment is managed by an Argo CD `Application` manifest located at `argocd/apps/traefik.yaml`. Argo CD ensures that the Traefik deployment in the cluster always matches the configuration defined in the `charts/traefik` directory.
 
-The installation is managed from your **local machine**.
+## 2. Key Configuration Choices
 
-1.  **Add the Traefik Helm Repository:**
-    ```bash
-    helm repo add traefik https://helm.traefik.io/traefik
-    helm repo update
-    ```
+The configuration in `charts/traefik/values.yaml` is critical for integrating with the rest of our platform.
 
-2.  **Create the Namespace:**
-    ```bash
-    kubectl create namespace traefik
-    ```
+-   `service.type: NodePort`: This is the most important setting. It exposes Traefik on a high-numbered port on the Raspberry Pi's own network interface. This allows the `cloudflared` service (running on the host) to connect to it.
+-   `service.nodePorts.web: 30080`: We explicitly set the `NodePort` to a predictable value (`30080`). This is the port that `cloudflared` is configured to forward traffic to.
+-   `entryPoints.websecure.address: ""`: We disable the `websecure` (HTTPS) entrypoint. This is because TLS is terminated at the Cloudflare edge, and traffic within our cluster is plain HTTP. This prevents port conflicts and simplifies the setup.
+-   `dashboard.enabled: true` & `api.insecure: true`: These settings enable the Traefik dashboard and expose it internally for diagnostic purposes.
 
-3.  **Install the Chart with Custom Configuration:**
-    The following command installs Traefik with a specific configuration tailored for our architecture.
+## 3. Traefik Dashboard
 
-    ```bash
-    helm install traefik traefik/traefik \
-      --namespace=traefik \
-      --set="service.type=NodePort" \
-      --set="ports.web.nodePort=30080" \
-      --set="entryPoints.websecure.address="
-    ```
+For diagnostics and visibility into the ingress routing, the Traefik dashboard is exposed at:
 
-### Key Configuration Parameters Explained
+**https://traefik-pi.taehoonlee.dev**
 
--   `--set="service.type=NodePort"`: This is the crucial setting that exposes Traefik on a high-numbered port on the Raspberry Pi's own network interface. This allows the `cloudflared` service (running on the host) to connect to it.
--   `--set="ports.web.nodePort=30080"`: We explicitly set the `NodePort` to a predictable value (`30080`). This is the port that `cloudflared` is configured to forward traffic to.
--   `--set="entryPoints.websecure.address="`: We disable the `websecure` (HTTPS) entrypoint by setting its address to an empty string. This is because TLS is terminated at the Cloudflare edge, and traffic within our cluster is plain HTTP. This prevents port conflicts and simplifies the setup.
-
-## 3. Verification
-
-After the installation, you can verify that the Traefik service is correctly configured by running:
-
-```bash
-kubectl get service traefik -n traefik
-```
-
-The output should show a `TYPE` of `NodePort` and a `PORT(S)` mapping of `8080:30080/TCP`. This confirms that the internal port `8080` of the Traefik service is correctly exposed on port `30080` of the Raspberry Pi node.
-
-```
+This is achieved via a dedicated `IngressRoute` template within the `charts/traefik` chart, which routes traffic to the internal `api@internal` Traefik service.

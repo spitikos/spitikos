@@ -2,13 +2,16 @@
 
 This document provides a high-level overview of the architecture, design patterns, and core concepts used in this project.
 
-## 1. Core Philosophy
+## 1. Core Philosophy: GitOps
 
-The goal of this project is to create a scalable, maintainable, and automated platform for hosting containerized applications on a Raspberry Pi. The key principles are:
+The entire project is built around a **GitOps** philosophy. This repository is the **single source of truth** for the entire platform. The desired state of all applications, infrastructure, and configurations is defined declaratively here. [Argo CD](https://argo-cd.readthedocs.io/) acts as the GitOps operator, continuously ensuring the live state of the cluster matches the state defined in this repository.
 
--   **Infrastructure as Code (IaC):** All aspects of the system, from Kubernetes deployments to CI/CD pipelines, are defined as code in this Git repository.
+The key principles are:
+-   **Declarative:** All configuration is declarative code, primarily Kubernetes and Helm manifests.
+-   **Versioned and Auditable:** All changes are Git commits, providing a clear audit trail and the ability to revert changes.
+-   **Automated:** The entire lifecycle, from code commit to live deployment, is automated.
 -   **Modularity:** Each application is a self-contained unit, managed in its own Git repository and included here as a Git submodule. This enforces clean separation of concerns.
--   **Don't Repeat Yourself (DRY):** Common patterns, especially for Kubernetes deployments and CI/CD, are abstracted into reusable components (`common` Helm chart, reusable GitHub workflows).
+-   **Don't Repeat Yourself (DRY):** Common patterns are abstracted into reusable components (the `common` Helm chart, reusable GitHub workflows).
 
 ## 2. System Components
 
@@ -19,16 +22,19 @@ The platform consists of several key layers:
 | **Hardware** | Raspberry Pi 5 | The physical server running the platform. |
 | **Operating System** | Ubuntu Server | The base OS for the Raspberry Pi. |
 | **Container Orchestration** | k3s | A lightweight, certified Kubernetes distribution. |
-| **Ingress & Networking** | Cloudflare Tunnel & Traefik | Provides secure public access to services without opening firewall ports. Traefik routes traffic internally based on URL paths. |
-| **Application Packaging** | Helm | Manages Kubernetes deployments using a reusable library chart pattern. |
-| **CI/CD** | GitHub Actions | Automates building container images for each submodule and updating the parent repository's submodule pointers. |
+| **Public Ingress** | Cloudflare Tunnel | Provides a secure, outbound-only connection to the Cloudflare network, handling TLS termination. |
+| **Internal Ingress** | Traefik | Routes traffic within the cluster from the tunnel to the correct service based on hostname. |
+| **Application Packaging** | Helm | Manages Kubernetes deployments using a reusable "wrapper chart" pattern. |
+| **Continuous Integration** | GitHub Actions | Builds and pushes container images; automatically updates Helm values in this repository. |
+| **Continuous Deployment** | Argo CD | Detects changes in this repository and automatically syncs them to the Kubernetes cluster. |
 
 ## 3. Project Structure
 
 The repository is organized as follows:
 
 -   `apps/`: Contains the source code for all applications. Each subdirectory is a Git submodule pointing to a separate repository.
--   `charts/`: Contains all the Helm charts for deploying applications. This includes a `_common` library chart and wrapper charts for each application.
--   `.github/workflows/`: Contains the reusable GitHub Actions workflows for CI/CD.
--   `doc/`: Contains all project documentation.
--   `Makefile`: Provides convenient shortcuts for common development tasks like updating Helm dependencies and installing all applications.
+-   `charts/`: Contains all the Helm charts for deploying applications and platform services (like Traefik).
+-   `argocd/`: Contains the Argo CD application manifests that define what should be deployed.
+-   `.github/workflows/`: Contains the reusable GitHub Actions workflows for CI.
+-   `docs/`: Contains all project documentation.
+-   `Makefile`: Provides convenient shortcuts for common development tasks.

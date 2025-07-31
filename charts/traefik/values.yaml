@@ -1,16 +1,22 @@
-# passed to the official 'traefik' subchart.
+# This key is important. All values under it are passed
+# directly to the official 'traefik' subchart.
 traefik:
-  dashboard:
-    enabled: true
+  # Enable the API and attach the dashboard to it.
+  # This avoids creating conflicting entrypoints.
   api:
     insecure: true
+    dashboard: true
+
+  # Explicitly disable the websecure entrypoint, as we don't use it.
+  entryPoints:
+    websecure:
+      address: null
+
+  # Configure the service for NodePort access by cloudflared.
   service:
     type: NodePort
     nodePorts:
       web: 30080
-  entryPoints:
-    websecure:
-      address: ""
 
 # Values for our custom templates in this chart
 ingress:
