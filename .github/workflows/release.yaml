@@ -1,14 +1,21 @@
-name: Docker Build and Publish
+name: Release
 
 on:
   workflow_call:
     inputs:
+      deployment:
+        required: true
+        type: string
+      namespace:
+        required: true
+        type: string
       image_name:
         required: true
         type: string
 
 jobs:
-  build-and-publish:
+  docker-publish:
+    name: Build and push Docker image
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -38,4 +45,16 @@ jobs:
           file: ./Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:latest
+          tags: ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:${{ github.sha }}
+
+  update-image:
+    name: Update deployment image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set image with git sha
+        uses: actions-hub/kubectl@master
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        with:
+          args: set image deployment/${{ inputs.deployment }} ${{ inputs.image_name }}=ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:${{ github.sha }}
