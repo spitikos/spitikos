@@ -12,6 +12,9 @@ on:
       image_name:
         required: true
         type: string
+      image_tag:
+        required: true
+        type: string
 
 jobs:
   docker-publish:
@@ -45,7 +48,7 @@ jobs:
           file: ./Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:${{ github.sha }}
+          tags: ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:${{ inputs.image_tag }}
 
   update-image:
     name: Update Deployment Image
@@ -53,9 +56,9 @@ jobs:
     needs: docker-publish
 
     steps:
-      - name: Set image with git sha
+      - name: Set new image tag
         uses: actions-hub/kubectl@master
         env:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
         with:
-          args: set image deployment/${{ inputs.deployment }} ${{ inputs.image_name }}=ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:${{ github.sha }}
+          args: set image deployment/${{ inputs.deployment }} ${{ inputs.image_name }}=ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:${{ inputs.image_tag }}
