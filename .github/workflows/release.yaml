@@ -60,6 +60,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/pi
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update image tag
         run: |
@@ -69,6 +72,6 @@ jobs:
         run: |
           git config --global user.email "github-actions@github.com"
           git config --global user.name "GitHub Actions"
-          git add ${{ inputs.chart_path }}/Chart.yaml
-          git commit -m "Update chart version to ${{ inputs.image_tag }}"
-          git push origin ${{ github.ref }}
+          git add ${{ inputs.chart_path }}/values.yaml
+          git commit -m "update ${{ imagage_name }} image"
+          git push origin main
