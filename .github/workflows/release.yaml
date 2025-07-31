@@ -74,5 +74,5 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git config --global user.name "GitHub Actions"
           git add ${{ inputs.chart_path }}/values.yaml
-          git commit -m "update ${{ image_name }} image"
+          git commit -m "update ${{ inputs.image_name }} image"
           git push origin main
