@@ -69,7 +69,7 @@ jobs:
 
       - name: Update image tag
         run: |
-          sed -i "s#tag: .*#tag: ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:${{ inputs.image_tag }}#" ${{ inputs.chart_path }}/values.yaml
+          sed -i "s/tag: .*/tag: ${{ inputs.image_tag }}/" ${{ inputs.chart_path }}/values.yaml
 
       - name: Commit Changes
         run: |
