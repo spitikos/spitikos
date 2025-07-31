@@ -20,169 +20,89 @@ The Git repository becomes the single source of truth for the desired state of t
 
 ## 2. Implementation Plan
 
-### Step 1: Install Argo CD
+### Step 1: Add Argo CD Helm Repository
 
-First, we'll install Argo CD into its own namespace in the cluster.
+First, we add the official Argo Project Helm repository to Helm. This only needs to be done once.
 
 ```bash
-# Create the namespace for Argo CD
-kubectl create namespace argocd
-
-# Install the latest stable version of Argo CD
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+helm repo add argo https://argoproj.github.io/argo-helm
+helm repo update
 ```
 
-### Step 2: Access the Argo CD Server
+### Step 2: Configure Argo CD for Traefik Ingress
 
-For security, the Argo CD API server is not exposed via an Ingress by default. We will use `kubectl port-forward` to access it from our local machine.
+To integrate with our Traefik and Cloudflare setup, we need to configure the Argo CD Helm chart. We will create a dedicated values file to manage this configuration.
 
-1.  **Get the Initial Admin Password:**
-    The initial password is automatically generated and stored in a Kubernetes secret. Retrieve it with this command:
+Create the file `argocd/values.yaml` with the following content:
 
-    ```bash
-    kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
-    ```
-    **Save this password.**
+```yaml
+# argocd/values.yaml
+server:
+  # Allow the server to accept insecure, plain HTTP traffic
+  # This is safe because TLS is terminated at our ingress (Traefik/Cloudflare)
+  insecure: true
 
-2.  **Access the UI:**
-    Open a new terminal and run the port-forward command. This will block the terminal while it's running.
+  # Ingress configuration
+  ingress:
+    enabled: true
+    # We use IngressRoute, so we must specify the ingressClassName
+    ingressClassName: traefik
+    hosts:
+      # The public URL for the Argo CD UI
+      - pi.taehoonlee.dev
+    paths:
+      # The path for the Argo CD UI
+      - /argocd
+    # Required to make IngressRoute work instead of the default Ingress object
+    annotations:
+      kubernetes.io/ingress.class: traefik
+```
 
-    ```bash
-    kubectl port-forward svc/argocd-server -n argocd 8080:443
-    ```
-    You can now access the Argo CD UI by navigating to **https://localhost:8080** in your browser. Log in with the username `admin` and the password you retrieved.
+### Step 3: Install Argo CD via Helm
 
-### Step 3: Create the "App of Apps" Structure
+Now, install Argo CD using the Helm chart, applying our custom configuration from the `values.yaml` file.
+
+```bash
+# Create the namespace for Argo CD if it doesn't exist
+kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+
+# Install the chart
+helm install argocd argo/argo-cd \
+  --namespace argocd \
+  -f argocd/values.yaml \
+  --wait
+```
+
+### Step 4: Access the Argo CD UI
+
+With the ingress configured, you can now access the Argo CD UI directly from its public URL:
+
+**https://pi.taehoonlee.dev/argocd**
+
+### Step 5: Get the Initial Admin Password
+
+The initial password is automatically generated and stored in a Kubernetes secret. Retrieve it with this command:
+
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+```
+Log in to the UI with the username `admin` and this password.
+
+### Step 6: Create the "App of Apps" Structure
 
 We will use the "App of Apps" pattern to manage our applications. This means we will have one "root" Argo CD application that is responsible for managing all our other application definitions. This allows our entire application landscape to be managed from Git.
 
 Create the following directory and files:
 
-1.  **`argocd/`**
-2.  **`argocd/root-app.yaml`**
-3.  **`argocd/apps/`**
-4.  **`argocd/apps/homepage.yaml`**
-5.  **`argocd/apps/api-stats.yaml`**
-6.  **`argocd/apps/api-whoami.yaml`**
+1.  **`argocd/apps/`**
+2.  **`argocd/apps/homepage.yaml`**
+3.  **`argocd/apps/api-stats.yaml`**
+4.  **`argocd/apps/api-whoami.yaml`**
+5.  **`argocd/root-app.yaml`** (This should be in the `argocd` directory, not `argocd/apps`)
 
-#### `argocd/root-app.yaml`
-This is the parent application. It tells Argo CD to look in the `argocd/apps` directory and create an application for every `.yaml` file it finds there.
+*(The content for these files remains the same as previously defined)*
 
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: root
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: 'https://github.com/ethn1ee/pi.git' # Change this to your repo URL
-    targetRevision: HEAD
-    path: argocd/apps
-  destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: argocd
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-```
-
-#### `argocd/apps/homepage.yaml`
-This manifest defines the `pi-homepage` application.
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: pi-homepage
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  source:
-    repoURL: 'https://github.com/ethn1ee/pi.git' # Change this to your repo URL
-    targetRevision: HEAD
-    path: charts/homepage
-    helm:
-      valueFiles:
-        - values.yaml
-  destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: pi-homepage
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-```
-
-#### `argocd/apps/api-stats.yaml`
-This manifest defines the `pi-api-stats` application.
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: pi-api-stats
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  source:
-    repoURL: 'https://github.com/ethn1ee/pi.git' # Change this to your repo URL
-    targetRevision: HEAD
-    path: charts/api/stats
-    helm:
-      valueFiles:
-        - values.yaml
-  destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: pi-api-stats
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-```
-
-#### `argocd/apps/api-whoami.yaml`
-This manifest defines the `pi-api-whoami` application.
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: pi-api-whoami
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  source:
-    repoURL: 'https://github.com/ethn1ee/pi.git' # Change this to your repo URL
-    targetRevision: HEAD
-    path: charts/api/whoami
-    helm:
-      valueFiles:
-        - values.yaml
-  destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: pi-api-whoami
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-```
-
-### Step 4: Commit and Bootstrap Argo CD
+### Step 7: Commit and Bootstrap Argo CD
 
 1.  **Commit the new files:**
     Add the `argocd` directory and all its contents to Git, commit, and push.
@@ -202,41 +122,10 @@ spec:
 
 Once applied, go to the Argo CD UI. You will see the `root` application, which will in turn create the `pi-homepage`, `pi-api-stats`, and `pi-api-whoami` applications. They will automatically sync and deploy the current versions of your charts from the repository.
 
-### Step 5: Update the CI/CD Workflow
+### Step 8: Update the CI/CD Workflow
 
 The final step is to adjust the CI workflow. The `update-chart` job in `.github/workflows/release.yaml` is already doing the correct thing by updating `values.yaml` and pushing to the repo. We just need to ensure the commit message is clear and that developers understand this push is what triggers the deployment.
 
 The existing `update-chart` job is sufficient. No changes are needed, but it's critical to understand its new role: it is now a **trigger for Argo CD**, not just a file update.
-
-```yaml
-# .github/workflows/release.yaml
-
-# ... (docker-publish job remains the same) ...
-
-  update-chart:
-    name: Update Chart
-    runs-on: ubuntu-latest
-    needs: docker-publish
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Update image tag in values.yaml
-        run: |
-          # This sed command is correct. It updates the image tag.
-          sed -i "s/tag: .*/tag: ${{ inputs.image_tag }}/" ${{ inputs.chart_path }}/values.yaml
-
-      - name: Commit and Push Changes
-        run: |
-          git config --global user.email "github-actions@github.com"
-          git config --global user.name "GitHub Actions"
-          git add ${{ inputs.chart_path }}/values.yaml
-          # The commit message clearly indicates a new version is being deployed.
-          git commit -m "ci: deploy ${{ inputs.image_name }} version ${{ inputs.image_tag }}"
-          git push
-```
 
 Your GitOps pipeline is now complete.

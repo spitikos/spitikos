@@ -1,0 +1,10 @@
+configs:
+  params:
+    # Tell the Argo CD server that it is running behind a TLS-terminating proxy.
+    # This prevents the server from entering a redirect loop.
+    server.insecure: "true"
+
+# Disable the chart's built-in ingress, as we manage it ourselves.
+server:
+  ingress:
+    enabled: false
