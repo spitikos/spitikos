@@ -1,16 +1,20 @@
 # This key is important. All values under it are passed
 # directly to the official 'traefik' subchart.
 traefik:
-  # Enable the API and attach the dashboard to it.
-  # This avoids creating conflicting entrypoints.
+  # Rename the internal 'traefik' entrypoint to 'dashboard' to avoid a name collision.
+  entryPoints:
+    web:
+      address: ":80"
+    dashboard:
+      address: ":8080"
+    websecure:
+      address: null
+
+  # Enable the API and explicitly tell it to use our newly named 'dashboard' entrypoint.
   api:
     insecure: true
     dashboard: true
-
-  # Explicitly disable the websecure entrypoint, as we don't use it.
-  entryPoints:
-    websecure:
-      address: null
+    entryPoint: "dashboard"
 
   # Configure the service for NodePort access by cloudflared.
   service:
