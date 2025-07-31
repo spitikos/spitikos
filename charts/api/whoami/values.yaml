@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: traefik/whoami
   pullPolicy: IfNotPresent
-  tag: "latest"
+  tag: latest
 
 service:
   type: ClusterIP
