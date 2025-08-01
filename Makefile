@@ -1,6 +1,5 @@
 .PHONY: help helm-deps dashboard-token drain-node uncordon-node
 
-
 help: ## Print help
 	@awk 'BEGIN {FS=":.*##";printf"Makefile\n\nUsage:\n  make [command]\n\nAvailable Commands:\n"}/^[a-zA-Z_0-9-]+:.*?##/{printf"  %-40s%s\n",$$1,$$2}/^##@/{printf"\n%s\n",substr($$0,5)}' $(MAKEFILE_LIST)
 
