@@ -1,6 +1,10 @@
 # This key is important. All values under it are passed
 # directly to the official 'traefik' subchart.
 traefik:
+  # Enable RBAC to allow Traefik to discover services across all namespaces.
+  rbac:
+    create: true
+
   # Rename the internal 'traefik' entrypoint to 'dashboard' to avoid a name collision.
   entryPoints:
     web:
