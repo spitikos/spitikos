@@ -11,6 +11,4 @@ service:
   targetPort: 8080
 
 ingress:
-  enabled: true
-  host: pi.taehoonlee.dev
-  path: /api/stats
+  enabled: false

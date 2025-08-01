@@ -11,6 +11,4 @@ service:
   targetPort: 80
 
 ingress:
-  enabled: true
-  host: pi.taehoonlee.dev
-  path: /api/whoami
+  enabled: false
