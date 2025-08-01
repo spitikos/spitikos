@@ -17,7 +17,7 @@ spec:
     - match: Host(`{{ .Values.ingress.host }}`) && PathPrefix(`{{ .Values.ingress.path }}`)
       kind: Rule
       services:
-        - name: {{ include "common.fullname" . }}-service
+        - name: {{ include "common.fullname" . }}
           port: {{ .Values.service.port }}
       middlewares:
         - name: {{ include "common.fullname" . }}-middleware
