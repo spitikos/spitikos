@@ -2,7 +2,7 @@
 # directly to the official 'traefik' subchart.
 traefik:
   rbac:
-    create: true
+    enabled: true
 
   # Rename the internal 'traefik' entrypoint to 'dashboard' to avoid a name collision.
   entryPoints:
