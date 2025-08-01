@@ -5,7 +5,7 @@ Define the common service resource.
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "common.fullname" . }}-service
+  name: {{ include "common.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "common.labels" . | nindent 4 }}
