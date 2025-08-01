@@ -31,14 +31,15 @@ This project is not a simple collection of files; it is a highly structured plat
     -   A submodule's CI workflow is a simple "caller" that triggers these reusable workflows. It first calls `docker-publish.yaml` to build its image. Upon success, it triggers `sync-submodule.yaml` via a `workflow_dispatch` API call to update its pointer in the parent repository.
 -   **Implication:** Do not create a monolithic CI workflow in the parent repository. All application-specific CI logic belongs in the submodule's own repository.
 
-### 1.4. Naming Conventions
+### 1.4. Namespace per Application
 
-The project follows a strict naming convention to maintain consistency.
+-   **Rule:** Every application is deployed into its own dedicated Kubernetes namespace.
+-   **Convention:** The namespace name should match the application's chart name (e.g., the `pi-homepage` chart is deployed to the `pi-homepage` namespace).
 
--   **Rule:** In-cluster resources, such as the **Argo CD Application Name** and the **Kubernetes Namespace**, must be named after the application's purpose, without any prefixes (e.g., `homepage`, `api-stats`).
--   **Rule:** External assets, such as the **Git Repository** and the **Docker Image**, must use the `pi-` prefix (e.g., `pi-homepage`, `ghcr.io/ethn1ee/pi-api-stats`).
--   **Rule:** `Service` resources must be named exactly after the application's chart name (e.g., the `Service` for the `homepage` chart is `homepage`).
--   **Exception:** Third-party applications (e.g., `traefik`, `kube-dashboard`) do not follow these prefixing rules.
+### 1.5. Kubernetes Naming Conventions
+
+-   **Rule:** `Service` resources must be named after the application, without any extra suffixes. The name should match the output of the `common.fullname` Helm template helper.
+-   **Example:** For the `pi-homepage` chart, the `Service` must be named `pi-homepage`, not `pi-homepage-service`.
 
 ---
 
