@@ -1,7 +1,6 @@
 # This key is important. All values under it are passed
 # directly to the official 'traefik' subchart.
 traefik:
-  # Enable RBAC to allow Traefik to discover services across all namespaces.
   rbac:
     create: true
 
