@@ -7,6 +7,3 @@
 	path = apps/homepage
 	url = https://github.com/ethn1ee/pi-homepage.git
 	branch = main
-[submodule "protos"]
-	path = protos
-	url = git@github.com:ethn1ee/pi-protos.git
