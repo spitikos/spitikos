@@ -11,18 +11,22 @@ This approach provides several key advantages:
 -   **Clear Ownership:** The `pi-protos` repository is the designated location for all API contract changes.
 -   **Versioning:** API changes can be versioned and tagged, allowing consumer applications to pin to specific, stable versions of the API.
 
-## 2. Consumption Strategy: Git Submodules
+## 2. Consumption Strategy: Hybrid Approach
 
-Both producer and consumer applications integrate with the `pi-protos` repository by adding it as a **Git submodule**. This allows them to pull in the `.proto` files directly during their build process without needing a separate package manager.
+To optimize the developer experience for different ecosystems, the project uses a hybrid consumption strategy. The backend consumes the raw `.proto` source files for local code generation, while the frontend consumes a pre-generated, language-specific package.
 
-### 2.1. Backend (`api-stats`) Integration
+### 2.1. Backend (Go) Consumption: Git Submodule
 
--   **Location:** The `pi-protos` repository is included as a submodule at the path `proto/` within the `apps/api/stats` application.
--   **Code Generation:** The existing `go generate` command in the backend's `Makefile` uses the `.proto` files from the submodule to generate the necessary Go server stubs and message types.
+The Go backend (`api-stats`) requires the raw `.proto` files to generate server-side code at build time.
 
-### 2.2. Frontend (`homepage`) Integration
+-   **Mechanism:** The `pi-protos` repository is included as a **Git submodule** at the path `proto/` inside the `api-stats` application.
+-   **Local Development:** A `replace` directive in the `api-stats` `go.mod` file points to this local submodule. This allows for rapid, offline-first development, as changes to the protos are immediately available to the Go compiler.
+-   **Code Generation:** A `Makefile` within the `pi-protos` submodule is responsible for running `protoc` to generate the Go files into a `gen/` directory, which are then used by the application.
 
--   **Location:** The `pi-protos` repository is included as a submodule at the path `src/proto/` within the `apps/homepage` application.
--   **Code Generation:** The frontend uses [`@bufbuild/buf`](https://buf.build/) to generate a type-safe TypeScript client from the Protobuf definitions.
-    -   **Configuration:** A `buf.gen.yaml` file in the `homepage` root configures the code generation plugins and output directory (`src/gen`).
-    -   **Execution:** A `pnpm build:proto` script runs the `buf generate` command, which is integrated into the main `pnpm build` process. This ensures the client is always up-to-date with the Protobuf definitions before the application is built.
+### 2.2. Frontend (TypeScript) Consumption: NPM Package
+
+The frontend (`homepage`) consumes a pre-generated, type-safe TypeScript client, following standard JavaScript ecosystem practices.
+
+-   **Mechanism:** The `pi-protos` repository is responsible for generating the TypeScript client and publishing it as an NPM package (e.g., `@ethanlee/pi-protos`).
+-   **Dependency:** The `homepage` application adds this package as a standard `dependency` in its `package.json`.
+-   **Benefits:** This approach completely decouples the frontend from the Protobuf tooling. Frontend developers do not need to manage Git submodules or install `protoc`/`buf`; they simply install a package from the registry.
