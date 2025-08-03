@@ -10,7 +10,7 @@ The key principles are:
 -   **Declarative:** All configuration is declarative code, primarily Kubernetes and Helm manifests.
 -   **Versioned and Auditable:** All changes are Git commits, providing a clear audit trail and the ability to revert changes.
 -   **Automated:** The entire lifecycle, from code commit to live deployment, is automated.
--   **Modularity:** Each application is a self-contained unit, managed in its own Git repository and included here as a Git submodule. This enforces clean separation of concerns.
+-   **Monorepo:** All first-party application code, Kubernetes configurations, and infrastructure definitions are stored in this single repository, simplifying dependency management and ensuring atomic cross-cutting changes.
 -   **Don't Repeat Yourself (DRY):** Common patterns are abstracted into reusable components (the `common` Helm chart, reusable GitHub workflows).
 
 ## 2. System Components
@@ -32,7 +32,8 @@ The platform consists of several key layers:
 
 The repository is organized as follows:
 
--   `apps/`: Contains the source code for all applications. Each subdirectory is a Git submodule pointing to a separate repository.
+-   `apps/`: Contains the source code for all first-party applications (e.g., `homepage`, `api-stats`).
+-   `protos/`: A Git submodule containing the Protobuf API definitions.
 -   `charts/`: Contains all the Helm charts for deploying applications and platform services (like Traefik).
 -   `argocd/`: Contains the Argo CD application manifests that define what should be deployed.
 -   `.github/workflows/`: Contains the reusable GitHub Actions workflows for CI.
