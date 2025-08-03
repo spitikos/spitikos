@@ -10,19 +10,3 @@ helm-deps: ## Update Helm dependencies for all charts
 dash-token: ## Generate token for Kubernetes dashboard
 	@echo "--- Generating token for Kubernetes dashboard ---"
 	@kubectl create token -n kube-dashboard admin-user
-
-pi-off: ## Drain the Kubernetes node and shutdown pi
-	@echo "--- Draining node ---"
-	@kubectl drain pi --ignore-daemonsets --delete-emptydir-data
-	@ssh ethantlee@pi.local "sudo poweroff"
-
-pi-on: ## Mark the Kubernetes node as schedulable to resume workloads
-	@echo "--- Uncordoning node ---"
-	@kubectl uncordon pi
-
-sync-modules: ## Sync submodules to latest commit
-	@echo "--- Syncing submodules to latest commit ---"
-	@git submodule update --init --recursive --remote
-	@git add .
-	@git commit -m "bump submodules to latest"
-	@git push
