@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/ethn1ee/pi-api-stats
   pullPolicy: Always
-  tag: 0137aded6807490c652d82566d6efc0deb540a23
+  tag: c2acfcd0bba6adcb1d40a8be1e21adc1b75d47de
 
 service:
   type: ClusterIP
