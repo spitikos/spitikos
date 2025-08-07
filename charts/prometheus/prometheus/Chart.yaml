@@ -1,0 +1,14 @@
+apiVersion: v2
+name: prometheus-wrapper
+description: A wrapper chart for deploying the Prometheus monitoring system.
+type: application
+version: 0.1.0
+appVersion: v3.5.0
+icon: "https://raw.githubusercontent.com/ethn1ee/pi/main/icon.svg"
+annotations:
+  charts.helm.sh/display-name: Prometheus
+
+dependencies:
+  - name: prometheus
+    version: 27.29.1
+    repository: "https://prometheus-community.github.io/helm-charts"

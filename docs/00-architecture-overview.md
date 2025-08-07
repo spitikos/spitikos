@@ -33,7 +33,7 @@ The platform consists of several key layers:
 The repository is organized as follows:
 
 -   `apps/`: Contains the source code for all first-party applications (e.g., `homepage`, `api-stats`).
--   `protos/`: A Git submodule containing the Protobuf API definitions.
+-   `protos/`: Contains the Protobuf API definitions.
 -   `charts/`: Contains all the Helm charts for deploying applications and platform services (like Traefik).
 -   `argocd/`: Contains the Argo CD application manifests that define what should be deployed.
 -   `.github/workflows/`: Contains the reusable GitHub Actions workflows for CI.

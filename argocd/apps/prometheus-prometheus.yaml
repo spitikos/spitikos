@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: traefik
+  name: prometheus-prometheus
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -10,14 +10,14 @@ spec:
   source:
     repoURL: 'https://github.com/ethn1ee/pi.git'
     targetRevision: HEAD
-    path: charts/traefik
+    path: charts/prometheus/prometheus
     helm:
-      releaseName: traefik
+      releaseName: prometheus
       valueFiles:
         - values.yaml
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: traefik
+    namespace: prometheus
   syncPolicy:
     automated:
       prune: true

@@ -6,7 +6,7 @@ This document explains the project's fully automated CI/CD pipeline, which is de
 
 All first-party application source code (e.g., `homepage`, `api-stats`) is maintained in this single `pi` repository inside the `apps/` directory. This simplifies development by allowing for atomic commits that can span multiple applications and their configurations.
 
-The only exception is the `protos` directory, which is a Git submodule containing the shared Protobuf API definitions.
+The `pi-protos` directory contains the shared Protobuf API definitions, which are consumed as versioned packages.
 
 ## 2. The CI/CD Pipeline: From Code to Live Deployment
 
@@ -17,20 +17,20 @@ The pipeline is a chain reaction that starts with a `git push` to this repositor
 -   **Location:** Each application directory (e.g., `apps/homepage/`) contains its own CI workflow file (e.g., `.github/workflows/ci.yaml`).
 -   **Trigger:** The workflow is configured to run only when changes are detected within its specific application directory (e.g., a push that modifies files under `apps/homepage/`).
 
-### Step 2: Reusable Release Workflow (`release.yaml`)
+### Step 2: Reusable Release Workflow
 
--   **Location:** `.github/workflows/release.yaml` in the root of the `pi` repository.
--   **Purpose:** This is a generic, reusable workflow that is called by the application-specific workflows. It performs two critical jobs.
+-   **Location:** The application's workflow uses the `uses:` clause to call a **reusable workflow** located in the central `ethn1ee/pi` repository.
+-   **Purpose:** This reusable workflow is responsible for the entire release process.
 
 #### Job 1: `docker-publish`
--   Builds a multi-platform (`linux/amd64`, `linux/arm64`) Docker image for the application.
+-   Builds a single-platform (`linux/arm64`) Docker image for the application.
 -   Tags the image with the short commit SHA of the triggering commit.
 -   Pushes the new image to the GitHub Container Registry (ghcr.io).
 
 #### Job 2: `update-chart`
 -   This job runs only after `docker-publish` succeeds.
 -   It checks out this `pi` repository.
--   It runs a `sed` command to find the `values.yaml` file for the specific application (e.g., `charts/homepage/values.yaml`).
+-   It finds the `values.yaml` file for the specific application (e.g., `charts/homepage/values.yaml`).
 -   It replaces the `image.tag` value with the new commit SHA tag from the previous job.
 -   It commits this change directly back to this repository with a message like `ci: deploy homepage version <sha>`.
 -   It pushes the commit to `main`.

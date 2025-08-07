@@ -16,6 +16,8 @@ Telepresence solves this by creating a smart proxy that makes your local machine
 
 This means your local development server can use the exact same production configuration to connect to its backend dependencies.
 
+**Note for Web Frontends:** For browser-based applications (like the Next.js `homepage`), the backend gRPC server (e.g., `api-stats`) must also be configured with a Cross-Origin Resource Sharing (CORS) policy. While Telepresence handles the network connection, the browser will still enforce CORS checks. The server needs to send the appropriate headers to allow requests from the frontend's origin (e.g., `http://localhost:3000`).
+
 ## 3. Setup and Usage
 
 ### 3.1. Installation
@@ -54,7 +56,8 @@ With Telepresence connected, you can run your application locally as you normall
 **Example: Running the `homepage` frontend:**
 1.  `cd` into the `apps/homepage` directory.
 2.  Run `pnpm dev`.
-3.  The Next.js application can now make gRPC calls directly to the production service address: `api-stats.api-stats.svc.cluster.local:50051`.
+3.  The Next.js application's gRPC client is configured to talk to its own backend proxy at `/api/grpc`. When a request comes in, the server-side code of the proxy attempts to connect to the internal service address: `api-stats.api-stats.svc.cluster.local:50051`.
+4.  Because Telepresence is connected, your local machine can resolve this internal Kubernetes address, and the connection succeeds.
 
 ### 3.4. Disconnecting
 

@@ -12,6 +12,7 @@ spec:
     targetRevision: HEAD
     path: charts/homepage
     helm:
+      releaseName: homepage
       valueFiles:
         - values.yaml
   destination:

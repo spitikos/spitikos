@@ -12,6 +12,7 @@ spec:
     targetRevision: HEAD
     path: charts/api/stats
     helm:
+      releaseName: api-stats
       valueFiles:
         - values.yaml
   destination:

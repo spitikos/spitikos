@@ -1,4 +1,3 @@
-# passed to the official kubernetes-dashboard subchart.
 kubernetes-dashboard:
   service:
     externalPort: 443

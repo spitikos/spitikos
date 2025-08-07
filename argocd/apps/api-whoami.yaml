@@ -12,6 +12,7 @@ spec:
     targetRevision: HEAD
     path: charts/api/whoami
     helm:
+      releaseName: api-whoami
       valueFiles:
         - values.yaml
   destination:

@@ -12,6 +12,7 @@ spec:
     targetRevision: HEAD
     path: charts/kube-dashboard
     helm:
+      releaseName: kube-dashboard
       valueFiles:
         - values.yaml
   destination:

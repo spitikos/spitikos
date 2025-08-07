@@ -6,8 +6,8 @@ This document describes the GitOps workflow used in this project, which is power
 
 The automated deployment workflow is as follows:
 
-1.  A developer pushes code to an application submodule (e.g., `apps/homepage`).
-2.  The submodule's CI pipeline builds and pushes a new Docker image, tagged with the commit SHA.
+1.  A developer pushes code to an application directory (e.g., `apps/homepage`).
+2.  The application's CI pipeline builds and pushes a new Docker image, tagged with the commit SHA.
 3.  The CI pipeline updates the image `tag` in the corresponding Helm chart's `values.yaml` file in the parent `pi` repository and commits the change.
 4.  **Argo CD**, which constantly monitors the `pi` repository, detects the change to `values.yaml`.
 5.  Argo CD automatically "syncs" the application. It renders the Helm chart with the new values and applies the resulting manifests to the cluster. The new version is now live.
