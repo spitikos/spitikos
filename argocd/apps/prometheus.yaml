@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: prometheus-prometheus
+  name: prometheus
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: 'https://github.com/ethn1ee/pi.git'
     targetRevision: HEAD
-    path: charts/prometheus/prometheus
+    path: charts/prometheus
     helm:
       releaseName: prometheus
       valueFiles:

@@ -1,6 +1,6 @@
 apiVersion: v2
 name: prometheus-wrapper
-description: A wrapper chart for deploying the Prometheus monitoring system.
+description: A wrapper chart for deploying the kube-prometheus stack.
 type: application
 version: 0.1.0
 appVersion: v3.5.0
@@ -9,6 +9,6 @@ annotations:
   charts.helm.sh/display-name: Prometheus
 
 dependencies:
-  - name: prometheus
+  - name: kube-prometheus-stack
     version: 27.29.1
     repository: "https://prometheus-community.github.io/helm-charts"
