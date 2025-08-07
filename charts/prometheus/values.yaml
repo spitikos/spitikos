@@ -45,8 +45,6 @@ prometheus:
     storageSpec:
       emptyDir: {}
 
-    serviceMonitorSelector:
-      matchLabels: {} # An empty selector matches all ServiceMonitors.
+    serviceMonitorSelector: {}
 
-    podMonitorSelector:
-      matchLabels: {} # An empty selector matches all PodMonitors.
+    podMonitorSelector: {}
