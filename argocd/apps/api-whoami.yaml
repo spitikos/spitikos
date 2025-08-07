@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/ethn1ee/pi.git'
+    repoURL: "https://github.com/ethn1ee/pi.git"
     targetRevision: HEAD
     path: charts/api/whoami
     helm:
@@ -16,7 +16,7 @@ spec:
       valueFiles:
         - values.yaml
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: api-whoami
   syncPolicy:
     automated:
