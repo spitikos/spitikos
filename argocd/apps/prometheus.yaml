@@ -30,3 +30,4 @@ spec:
       kind: CustomResourceDefinition
       jsonPointers:
         - /spec
+        - /metadata/annotations
