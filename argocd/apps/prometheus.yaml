@@ -13,8 +13,8 @@ spec:
     path: charts/prometheus
     helm:
       releaseName: prometheus
-      valueFiles:
-        - values.yaml
+      # valueFiles:
+      #   - values.yaml
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: prometheus
