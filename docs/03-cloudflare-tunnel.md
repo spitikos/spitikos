@@ -12,12 +12,12 @@ To avoid issues with path-based routing and SSL certificates, we use a clean, su
 
 In the Cloudflare DNS dashboard for your domain, create the following `CNAME` records. They should all point to your tunnel's public address (e.g., `<UUID>.cfargotunnel.com`).
 
-| Type    | Name          | Target                            |
-| :------ | :------------ | :-------------------------------- |
-| `CNAME` | `pi`          | `<UUID>.cfargotunnel.com`         |
-| `CNAME` | `argocd-pi`   | `<UUID>.cfargotunnel.com`         |
-| `CNAME` | `kube-pi`     | `<UUID>.cfargotunnel.com`         |
-| `CNAME` | `traefik-pi`  | `<UUID>.cfargotunnel.com`         |
+| Type    | Name         | Target                    |
+| :------ | :----------- | :------------------------ |
+| `CNAME` | `pi`         | `<UUID>.cfargotunnel.com` |
+| `CNAME` | `argocd-pi`  | `<UUID>.cfargotunnel.com` |
+| `CNAME` | `kube-pi`    | `<UUID>.cfargotunnel.com` |
+| `CNAME` | `traefik-pi` | `<UUID>.cfargotunnel.com` |
 
 This setup ensures that Cloudflare's Universal SSL certificate properly covers all hostnames.
 

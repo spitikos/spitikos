@@ -2,21 +2,22 @@
 
 This document explains how to set up and use [Telepresence](https://www.telepresence.io/) to enable a seamless local development experience when working with services that run inside the Kubernetes cluster.
 
-This approach allows you to run a service (e.g., the `homepage` frontend) on your local machine and have it communicate directly with backend services (e.g., the `api-stats` gRPC server) running in the cluster, without needing `kubectl port-forward` or separate development configurations.
+This approach allows you to run a service (e.g., the `homepage` frontend) on your local machine and have it communicate directly with backend services running in the cluster, without needing `kubectl port-forward` or separate development configurations.
 
 ## 1. The Problem: Accessing In-Cluster Services
 
-When a service like the `api-stats` server is deployed without an ingress, it is only accessible from within the cluster's network. This is great for security but poses a challenge for local development. `kubectl port-forward` is a possible solution, but it requires developers to constantly switch between using `localhost` in development and the real service name in production.
+When a backend service is deployed without an ingress, it is only accessible from within the cluster's network. This is great for security but poses a challenge for local development. `kubectl port-forward` is a possible solution, but it requires developers to constantly switch between using `localhost` in development and the real service name in production.
 
 ## 2. The Solution: Telepresence
 
 Telepresence solves this by creating a smart proxy that makes your local machine part of the Kubernetes cluster's network. When connected, you can:
--   **Resolve Cluster DNS:** Access services using their standard Kubernetes DNS names (e.g., `api-stats.api-stats.svc.cluster.local`).
--   **Access Cluster IPs:** Directly communicate with `ClusterIP` and `PodIP` addresses.
+
+- **Resolve Cluster DNS:** Access services using their standard Kubernetes DNS names (e.g., `my-api.my-namespace.svc.cluster.local`).
+- **Access Cluster IPs:** Directly communicate with `ClusterIP` and `PodIP` addresses.
 
 This means your local development server can use the exact same production configuration to connect to its backend dependencies.
 
-**Note for Web Frontends:** For browser-based applications (like the Next.js `homepage`), the backend gRPC server (e.g., `api-stats`) must also be configured with a Cross-Origin Resource Sharing (CORS) policy. While Telepresence handles the network connection, the browser will still enforce CORS checks. The server needs to send the appropriate headers to allow requests from the frontend's origin (e.g., `http://localhost:3000`).
+**Note for Web Frontends:** For browser-based applications (like the Next.js `homepage`), the backend gRPC server must also be configured with a Cross-Origin Resource Sharing (CORS) policy. While Telepresence handles the network connection, the browser will still enforce CORS checks. The server needs to send the appropriate headers to allow requests from the frontend's origin (e.g., `http://localhost:3000`).
 
 ## 3. Setup and Usage
 
@@ -25,6 +26,7 @@ This means your local development server can use the exact same production confi
 Telepresence must be installed on your local machine.
 
 1.  **Install the CLI (macOS):**
+
     ```bash
     # This is the correct tap for the open-source version
     brew install telepresenceio/telepresence/telepresence-oss
@@ -35,7 +37,7 @@ Telepresence must be installed on your local machine.
     ```bash
     telepresence helm install
     ```
-    *Note: By default, this installs to the `traffic-manager` namespace.*
+    _Note: By default, this installs to the `traffic-manager` namespace._
 
 ### 3.2. Connecting to the Cluster
 
@@ -54,9 +56,10 @@ If successful, you will see output confirming the connection. Your machine now h
 With Telepresence connected, you can run your application locally as you normally would.
 
 **Example: Running the `homepage` frontend:**
-1.  `cd` into the `apps/homepage` directory.
+
+1.  `cd` into the `homepage` application directory.
 2.  Run `pnpm dev`.
-3.  The Next.js application's gRPC client is configured to talk to its own backend proxy at `/api/grpc`. When a request comes in, the server-side code of the proxy attempts to connect to the internal service address: `api-stats.api-stats.svc.cluster.local:50051`.
+3.  If the `homepage` needs to connect to a backend gRPC service, its client will be configured to talk to its own backend proxy (e.g., `/api/grpc`). When a request comes in, the server-side code of the proxy attempts to connect to the internal service address (e.g., `my-api.my-namespace.svc.cluster.local:50051`).
 4.  Because Telepresence is connected, your local machine can resolve this internal Kubernetes address, and the connection succeeds.
 
 ### 3.4. Disconnecting

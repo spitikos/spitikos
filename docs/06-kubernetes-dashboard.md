@@ -6,17 +6,18 @@ This document details the deployment of the Kubernetes Dashboard, a general-purp
 
 Like all other components in this project, the Kubernetes Dashboard is deployed declaratively via GitOps.
 
--   **Wrapper Chart:** We use a wrapper chart at `charts/kube-dashboard` which includes the official `kubernetes-dashboard/kubernetes-dashboard` chart as a dependency.
--   **Declarative Configuration:** All configuration is defined in `charts/kube-dashboard/values.yaml`.
--   **GitOps Management:** The dashboard is deployed and managed by an Argo CD `Application` manifest. To deploy, modify, or remove the dashboard, a change is made in the `charts/kube-dashboard` directory and pushed to Git. Argo CD handles the rest.
+- **Wrapper Chart:** We use a wrapper chart located in the `spitikos/charts` repository at `charts/kube-dashboard`. This chart includes the official `kubernetes-dashboard/kubernetes-dashboard` chart as a dependency.
+- **Declarative Configuration:** All configuration is defined in `charts/kube-dashboard/values.yaml` in the `spitikos/charts` repository.
+- **GitOps Management:** The dashboard is deployed and managed by an Argo CD `Application` manifest in the `spitikos/spitikos` repository. To deploy, modify, or remove the dashboard, a change is made in the `spitikos/charts` repository and pushed to Git. Argo CD handles the rest.
 
 ## 2. Ingress and Networking
 
 The dashboard is exposed at **https://kube-pi.taehoonlee.dev**.
 
 The wrapper chart contains a custom `IngressRoute` template that:
--   Routes traffic based on the `host` value in `values.yaml`.
--   Includes a `ServersTransport` resource to allow Traefik to communicate with the dashboard's self-signed TLS certificate on its backend service.
+
+- Routes traffic based on the `host` value in `values.yaml`.
+- Includes a `ServersTransport` resource to allow Traefik to communicate with the dashboard's self-signed TLS certificate on its backend service.
 
 ## 3. Authentication: Service Account and Token
 
@@ -25,6 +26,7 @@ The dashboard is configured to use token-based authentication. The Helm chart cr
 ### How to Log In
 
 1.  **Generate a Login Token:** From your local machine, run the following command. The token is short-lived by default.
+
     ```bash
     kubectl create token admin-user -n kube-dashboard
     ```
@@ -32,6 +34,6 @@ The dashboard is configured to use token-based authentication. The Helm chart cr
 2.  **Copy the token** that is printed to the console.
 
 3.  **Access the Dashboard:**
-    *   Navigate to **https://kube-pi.taehoonlee.dev**.
-    *   Select the **Token** authentication method.
-    *   Paste the token into the field and click **Sign in**.
+    - Navigate to **https://kube-pi.taehoonlee.dev**.
+    - Select the **Token** authentication method.
+    - Paste the token into the field and click **Sign in**.

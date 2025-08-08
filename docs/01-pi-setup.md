@@ -33,7 +33,8 @@ A static IP is crucial for providing a reliable endpoint for `kubectl` and SSH a
                 key-management: "psk"
                 password: "YOUR_WIFI_PASSWORD"
     ```
-    *   **Note:** Replace `YOUR_WIFI_SSID` and `YOUR_WIFI_PASSWORD` with your actual Wi-Fi credentials.
+
+    - **Note:** Replace `YOUR_WIFI_SSID` and `YOUR_WIFI_PASSWORD` with your actual Wi-Fi credentials.
 
 3.  **Apply the configuration:** Run the following command on the Pi. This will cause the network interface to restart. If you are connected via SSH, the session will disconnect, and you will need to reconnect to the new static IP address (`10.0.0.200`).
 

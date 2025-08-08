@@ -2,40 +2,26 @@
 
 This document outlines the architecture for managing and consuming Protobuf API definitions across different services in the project.
 
-## 1. Core Principle: Centralized API Repository & Packages
+## 1. Core Principle: Decentralized Schema with Buf.build
 
-To ensure a single source of truth for all API contracts, the Protobuf (`.proto`) files are managed in a dedicated, central Git repository: [`pi-protos`](https://github.com/ethn1ee/pi-protos).
+To ensure a single source of truth for all API contracts, this project uses the [Buf.build Schema Registry](https://buf.build/). This approach avoids the need for a dedicated Git repository to store `.proto` files or generated code.
 
-This repository is configured with a CI/CD pipeline that automatically generates and publishes versioned packages for different languages whenever a new version tag is pushed.
+The key principles are:
 
-This approach provides several key advantages:
--   **Consistency:** All services are guaranteed to be working from the exact same versioned API definition.
--   **Decoupling:** Consumer applications are completely decoupled from the `protoc` toolchain.
--   **Versioning:** API changes are managed through standard package versioning, allowing applications to upgrade their dependencies deliberately.
+- **Decentralized:** The `.proto` files for a given service live within that service's own source code repository.
+- **Centralized Registry:** All services push their Protobuf schemas to a single, central registry on Buf.build under the `spitikos` organization.
+- **Automated SDK Generation:** Buf.build automatically generates client SDKs for multiple languages and publishes them to common package registries (like npm for TypeScript or Go modules).
+- **Decoupling:** Consumer applications are completely decoupled from the `protoc` toolchain. They simply import the pre-generated, versioned SDK as a standard package dependency.
 
 ## 2. Consumption Strategy: Package-Based
 
-Both the backend and frontend services consume the API definitions as standard, pre-generated packages from their respective registries.
+Both backend and frontend services consume the API definitions as standard, pre-generated packages from their respective registries.
 
-### 2.1. Backend (Go) Consumption
+### Example Workflow
 
-The Go backend (`api-stats`) consumes the generated Go package for the Protobuf definitions.
+1.  **Schema Definition:** A developer defines or modifies a `.proto` file inside a backend service's repository (e.g., `spitikos/new-api/proto/new-api.proto`).
+2.  **CI Push:** The service's CI/CD pipeline includes a step to run `buf push`, which pushes the schema to the `spitikos` organization on the Buf Schema Registry.
+3.  **SDK Generation:** Buf automatically generates the necessary client code. For a frontend application, it would publish a new version of an npm package like `@spitikos/new-api-sdk`.
+4.  **Dependency Update:** A frontend developer can then update their `package.json` to the new version of the SDK to get access to the new, fully-typed client.
 
--   **Dependency:** The `pi-api-stats` service adds the `github.com/ethn1ee/pi-protos` package as a standard dependency in its `go.mod` file.
--   **Workflow:** To update to a new API version, a developer simply runs `go get` to fetch the new version of the package.
-
-### 2.2. Frontend (TypeScript) Consumption: The BFF Proxy Pattern
-
-The frontend (`homepage`) does **not** connect directly to the gRPC `api-stats` service. Doing so would require exposing the service publicly and dealing with complex cross-origin (CORS) issues.
-
-Instead, we use a **Backend for Frontend (BFF)** proxy pattern, implemented as a generic Next.js API Route.
-
--   **Proxy Route:** A single API route (`/api/grpc/[...path]`) within the `pi-homepage` application acts as a proxy.
--   **Client Configuration:** The gRPC client transport in the browser is configured to point to this local proxy route (e.g., `baseUrl: "/api/grpc"`).
--   **Data Flow:**
-    1.  The browser-side component makes a type-safe gRPC call to the `/api/grpc` endpoint.
-    2.  The Next.js server receives this request.
-    3.  It forwards the request, including the binary Protobuf payload, to the internal `api-stats` service address (`http://api-stats.api-stats.svc.cluster.local:50051`).
-    4.  It streams the binary response from `api-stats` directly back to the browser.
-
--   **Benefits:** This approach is both secure and type-safe. The `api-stats` service remains private within the cluster, and the end-to-end binary Protobuf contract is preserved all the way to the browser.
+This modern, registry-based approach provides strong consistency and versioning guarantees while simplifying the development workflow significantly.
