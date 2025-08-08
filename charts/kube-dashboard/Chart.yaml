@@ -4,7 +4,7 @@ description: A wrapper chart for deploying the official Kubernetes Dashboard wit
 type: application
 version: 0.1.0
 appVersion: 3.0.0
-icon: https://raw.githubusercontent.com/ethn1ee/pi/main/icon.svg
+icon: https://raw.githubusercontent.com/spitikos/spitikos/main/icon.svg
 annotations:
   charts.helm.sh/display-name: "Kubernetes Dashboard"
 

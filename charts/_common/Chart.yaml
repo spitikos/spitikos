@@ -1,5 +1,5 @@
 apiVersion: v2
-icon: https://raw.githubusercontent.com/ethn1ee/pi/main/icon.svg
+icon: https://raw.githubusercontent.com/spitikos/spitikos/main/icon.svg
 name: common
 description: A common library chart for deploying web applications.
 type: library

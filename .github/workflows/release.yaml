@@ -28,7 +28,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -54,7 +54,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-
   update-chart:
     name: Update Chart
     runs-on: ubuntu-latest
@@ -66,7 +65,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.repository_owner }}/pi
+          repository: ${{ github.repository_owner }}/spitikos
           token: ${{ secrets.GHA_PAT }}
 
       - name: Update image tag

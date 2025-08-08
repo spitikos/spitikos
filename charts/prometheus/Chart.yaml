@@ -4,7 +4,7 @@ description: A wrapper chart for deploying the kube-prometheus stack.
 type: application
 version: 0.1.0
 appVersion: v0.83.0
-icon: "https://raw.githubusercontent.com/ethn1ee/pi/main/icon.svg"
+icon: "https://raw.githubusercontent.com/spitikos/spitikos/main/icon.svg"
 annotations:
   charts.helm.sh/display-name: Prometheus
 
