@@ -1,7 +1,0 @@
-apiVersion: v2
-icon: https://raw.githubusercontent.com/spitikos/spitikos/main/icon.svg
-name: common
-description: A common library chart for deploying web applications.
-type: library
-version: 0.1.0
-appVersion: "1.0.0"
