@@ -19,9 +19,9 @@ Both backend and frontend services consume the API definitions as standard, pre-
 
 ### Example Workflow
 
-1.  **Schema Definition:** A developer defines or modifies a `.proto` file inside a backend service's repository (e.g., `spitikos/new-api/proto/new-api.proto`).
+1.  **Schema Definition:** A developer defines or modifies a `.proto` file inside a backend service's repository (e.g., `spitikos/auth-service/proto/auth.proto`).
 2.  **CI Push:** The service's CI/CD pipeline includes a step to run `buf push`, which pushes the schema to the `spitikos` organization on the Buf Schema Registry.
-3.  **SDK Generation:** Buf automatically generates the necessary client code. For a frontend application, it would publish a new version of an npm package like `@spitikos/new-api-sdk`.
+3.  **SDK Generation:** Buf automatically generates the necessary client code. For a frontend application, it would publish a new version of an npm package like `@spitikos/auth-service-sdk`.
 4.  **Dependency Update:** A frontend developer can then update their `package.json` to the new version of the SDK to get access to the new, fully-typed client.
 
 This modern, registry-based approach provides strong consistency and versioning guarantees while simplifying the development workflow significantly.

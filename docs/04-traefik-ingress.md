@@ -23,6 +23,6 @@ The configuration in `charts/traefik/values.yaml` is critical for integrating wi
 
 For diagnostics and visibility into the ingress routing, the Traefik dashboard is exposed at:
 
-**https://traefik-pi.taehoonlee.dev**
+**https://traefik.spitikos.dev**
 
 This is achieved via a dedicated `IngressRoute` template within the `charts/traefik` chart, which routes traffic to the internal `api@internal` Traefik service.

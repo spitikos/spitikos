@@ -7,7 +7,7 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`argocd-pi.taehoonlee.dev`)
+    - match: Host(`argocd.spitikos.dev`)
       kind: Rule
       services:
         - name: argocd-server

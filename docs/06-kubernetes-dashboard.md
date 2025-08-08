@@ -34,6 +34,6 @@ The dashboard is configured to use token-based authentication. The Helm chart cr
 2.  **Copy the token** that is printed to the console.
 
 3.  **Access the Dashboard:**
-    - Navigate to **https://kube-pi.taehoonlee.dev**.
+    - Navigate to **https://kube.spitikos.dev**.
     - Select the **Token** authentication method.
     - Paste the token into the field and click **Sign in**.

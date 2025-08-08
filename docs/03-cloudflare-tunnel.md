@@ -37,13 +37,13 @@ credentials-file: <YOUR_CREDENTIALS_FILE_PATH>
 ingress:
   # Each rule points to the same Traefik NodePort service.
   # Traefik is responsible for routing to the correct application from here.
-  - hostname: pi.taehoonlee.dev
+  - hostname: homepage.spitikos.dev
     service: http://10.0.0.200:30080
-  - hostname: argocd-pi.taehoonlee.dev
+  - hostname: argocd.spitikos.dev
     service: http://10.0.0.200:30080
-  - hostname: kube-pi.taehoonlee.dev
+  - hostname: kube.spitikos.dev
     service: http://10.0.0.200:30080
-  - hostname: traefik-pi.taehoonlee.dev
+  - hostname: traefik.spitikos.dev
     service: http://10.0.0.200:30080
 
   # A required catch-all rule to terminate the list.

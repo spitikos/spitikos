@@ -21,7 +21,7 @@ The pipeline is a chain reaction that starts with a `git push` to an application
 
 ### Step 2: Reusable Release Workflow (`spitikos/spitikos`)
 
-- **Location:** The application's workflow uses the `uses:` clause to call a **reusable workflow** located in the central `spitikos/spitikos` repository.
+- **Location:** The application's workflow uses the `uses:` clause to call a **reusable workflow** named `release.yaml` located in the central `spitikos/spitikos` repository.
 - **Purpose:** This reusable workflow is responsible for the entire release process.
 
 #### Job 1: `docker-publish`

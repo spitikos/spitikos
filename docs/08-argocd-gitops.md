@@ -25,7 +25,7 @@ Argo CD is installed via its official Helm chart. The configuration is managed d
 
 ### Ingress and Access
 
-Argo CD is accessible at **https://argocd-pi.taehoonlee.dev**. This is managed by a dedicated `IngressRoute` located in the `spitikos/spitikos` repository at `argocd/ingress.yaml`.
+Argo CD is accessible at **https://argocd.spitikos.dev**. This is managed by a dedicated `IngressRoute` located in the `spitikos/spitikos` repository at `argocd/ingress.yaml`.
 
 ### "App of Apps" Pattern
 
