@@ -62,7 +62,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.repository_owner }}/spitikos
+          repository: ${{ github.repository_owner }}/charts
           token: ${{ secrets.GHA_PAT }}
 
       - name: Update image tag
