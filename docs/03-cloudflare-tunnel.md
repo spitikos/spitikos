@@ -23,9 +23,9 @@ This setup ensures that Cloudflare's Universal SSL certificate properly covers a
 
 ## 3. Tunnel Configuration (`config.yml`)
 
-The `cloudflared` service on the Raspberry Pi must be configured to accept traffic for these hostnames and forward it to the Traefik `NodePort`.
+The `cloudflared` service on the Raspberry Pi must be configured to accept traffic for all public hostnames and route them to the correct internal services.
 
-The configuration file at `/etc/cloudflared/config.yml` should contain an ingress rule for each hostname.
+The configuration file at `/etc/cloudflared/config.yml` should be structured with the most specific rules first.
 
 ```yaml
 # The Tunnel UUID from the 'tunnel create' command
@@ -35,18 +35,23 @@ credentials-file: <YOUR_CREDENTIALS_FILE_PATH>
 
 # Ingress rules define which hostnames are accepted and where they go.
 ingress:
-  # Each rule points to the same Traefik NodePort service.
-  # Traefik is responsible for routing to the correct application from here.
-  - hostname: homepage.spitikos.dev
-    service: http://10.0.0.200:30080
-  - hostname: argocd.spitikos.dev
-    service: http://10.0.0.200:30080
-  - hostname: kube.spitikos.dev
-    service: http://10.0.0.200:30080
-  - hostname: traefik.spitikos.dev
+  # 1. Specific services that do not go to the Traefik ingress controller.
+  - hostname: "k8s.spitikos.dev"
+    service: https://127.0.0.1:6443
+    originRequest:
+      noTLSVerify: true
+  - hostname: "ssh.spitikos.dev"
+    service: ssh://127.0.0.1:22
+
+  # 2. The root domain for the homepage, which goes to Traefik.
+  - hostname: "spitikos.dev"
     service: http://10.0.0.200:30080
 
-  # A required catch-all rule to terminate the list.
+  # 3. A wildcard for all other subdomains, which also go to Traefik.
+  - hostname: "*.spitikos.dev"
+    service: http://10.0.0.200:30080
+
+  # 4. A required catch-all rule to terminate the list.
   - service: http_status:404
 ```
 
@@ -57,4 +62,4 @@ sudo cloudflared service install
 sudo systemctl start cloudflared
 ```
 
-The tunnel is now active and routing traffic for all configured subdomains to your cluster.
+The tunnel is now active and routing traffic for all configured services.

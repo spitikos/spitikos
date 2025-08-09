@@ -1,71 +1,115 @@
-# Documentation: Local Development with Telepresence
+# Documentation: Remote & Local Development
 
-This document explains how to set up and use [Telepresence](https://www.telepresence.io/) to enable a seamless local development experience when working with services that run inside the Kubernetes cluster.
+This document explains the different methods for interacting with the cluster from your local machine, both for direct management and for application development.
 
-This approach allows you to run a service (e.g., the `homepage` frontend) on your local machine and have it communicate directly with backend services running in the cluster, without needing `kubectl port-forward` or separate development configurations.
+## 1. Direct Remote Management (SSH & `kubectl`)
 
-## 1. The Problem: Accessing In-Cluster Services
+Thanks to the Cloudflare Tunnel, you can securely manage the Raspberry Pi and the Kubernetes cluster from anywhere without a VPN.
 
-When a backend service is deployed without an ingress, it is only accessible from within the cluster's network. This is great for security but poses a challenge for local development. `kubectl port-forward` is a possible solution, but it requires developers to constantly switch between using `localhost` in development and the real service name in production.
+### 1.1. Remote SSH Access
 
-## 2. The Solution: Telepresence
+The tunnel is configured to proxy SSH traffic. To connect:
 
-Telepresence solves this by creating a smart proxy that makes your local machine part of the Kubernetes cluster's network. When connected, you can:
+1.  **Ensure `cloudflared` is installed** on your local machine (`brew install cloudflared`).
+2.  **Add the following to your `~/.ssh/config` file:**
+    ```
+    Host pi.spitikos.dev
+      HostName ssh.spitikos.dev
+      ProxyCommand /opt/homebrew/bin/cloudflared access ssh --hostname %h
+    ```
+    *(Note: Verify the path to your `cloudflared` executable by running `which cloudflared`)*
+3.  **Connect:** You can now simply run `ssh pi.spitikos.dev`.
 
-- **Resolve Cluster DNS:** Access services using their standard Kubernetes DNS names (e.g., `my-api.my-namespace.svc.cluster.local`).
-- **Access Cluster IPs:** Directly communicate with `ClusterIP` and `PodIP` addresses.
+### 1.2. Remote `kubectl` Access via TCP Tunnel
 
-This means your local development server can use the exact same production configuration to connect to its backend dependencies.
+To securely connect `kubectl` to the cluster, we use `cloudflared` to create a local TCP proxy that tunnels traffic to the Kubernetes API server.
 
-**Note for Web Frontends:** For browser-based applications (like the Next.js `homepage`), the backend gRPC server must also be configured with a Cross-Origin Resource Sharing (CORS) policy. While Telepresence handles the network connection, the browser will still enforce CORS checks. The server needs to send the appropriate headers to allow requests from the frontend's origin (e.g., `http://localhost:3000`).
+#### Method A: Persistent Background Service (Recommended)
 
-## 3. Setup and Usage
+This is the best practice. It creates a background service that starts automatically when you log in.
 
-### 3.1. Installation
+1.  **Create a `launchd` agent file.** Run the following command to create the service definition:
+    ```bash
+    cat << EOF > ~/Library/LaunchAgents/com.cloudflare.cloudflared.k8s-proxy.plist
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0">
+    <dict>
+        <key>Label</key>
+        <string>com.cloudflare.cloudflared.k8s-proxy</string>
+        <key>ProgramArguments</key>
+        <array>
+            <string>/opt/homebrew/bin/cloudflared</string>
+            <string>access</string>
+            <string>tcp</string>
+            <string>--hostname</string>
+            <string>k8s.spitikos.dev</string>
+            <string>--url</string>
+            <string>localhost:6443</string>
+        </array>
+        <key>RunAtLoad</key>
+        <true/>
+        <key>KeepAlive</key>
+        <true/>
+    </dict>
+    </plist>
+    EOF
+    ```
 
-Telepresence must be installed on your local machine.
+2.  **Load and start the service.** This command enables the service to start on login.
+    ```bash
+    launchctl load -w ~/Library/LaunchAgents/com.cloudflare.cloudflared.k8s-proxy.plist
+    ```
+
+#### Method B: Manual Terminal Session (Temporary)
+
+Use this method if you only need temporary access.
+
+1.  **Run the proxy command** in a dedicated terminal window. You must leave this window open.
+    ```bash
+    cloudflared access tcp --hostname k8s.spitikos.dev --url localhost:6443
+    ```
+
+#### `kubeconfig` Setup (For Both Methods)
+
+Your `~/.kube/config` file should use the original certificate data from the Pi, but point to your **local proxy**.
+
+1.  **Get the original `kubeconfig`** from the Pi: `sudo cat /etc/rancher/k3s/k3s.yaml`
+2.  **Copy it** to your local `~/.kube/config`.
+3.  **Change only the `server` line** to point to the local proxy:
+    ```diff
+    - server: https://127.0.0.1:6443
+    + server: https://localhost:6443
+    ```
+Your `kubectl` commands will now work seamlessly from any network.
+
+## 2. Local Application Development with Telepresence
+
+When you are actively developing a service on your local machine and need it to communicate with *other services running inside the cluster*, Telepresence is the best tool.
+
+*   **Remote `kubectl`** is for managing the cluster.
+*   **Telepresence** is for developing applications that run against the cluster.
+
+### Setup and Usage
 
 1.  **Install the CLI (macOS):**
-
     ```bash
-    # This is the correct tap for the open-source version
-    brew install telepresenceio/telepresence/telepresence-oss
+    brew install datawire/telepresence/telepresence
     ```
 
 2.  **Install the Traffic Manager:**
-    The Telepresence Traffic Manager is a service that runs inside your cluster and manages the connection.
     ```bash
     telepresence helm install
     ```
-    _Note: By default, this installs to the `traffic-manager` namespace._
 
-### 3.2. Connecting to the Cluster
+3.  **Connect to the Cluster:**
+    ```bash
+    sudo telepresence connect
+    ```
 
-Once installed, you can connect your machine to the cluster.
+4.  **Run your local service** (e.g., `pnpm dev`). Any code that connects to an in-cluster service (e.g., `my-api.my-namespace.svc.cluster.local`) will now succeed.
 
-```bash
-# Connect to the cluster using sudo to grant the daemon the necessary
-# root permissions to manage networking.
-sudo telepresence connect
-```
-
-If successful, you will see output confirming the connection. Your machine now has direct access to the cluster's network.
-
-### 3.3. Running a Local Service
-
-With Telepresence connected, you can run your application locally as you normally would.
-
-**Example: Running the `homepage` frontend:**
-
-1.  `cd` into the `homepage` application directory.
-2.  Run `pnpm dev`.
-3.  If the `homepage` needs to connect to a backend gRPC service, its client will be configured to talk to its own backend proxy (e.g., `/api/grpc`). When a request comes in, the server-side code of the proxy attempts to connect to the internal service address (e.g., `my-api.my-namespace.svc.cluster.local:50051`).
-4.  Because Telepresence is connected, your local machine can resolve this internal Kubernetes address, and the connection succeeds.
-
-### 3.4. Disconnecting
-
-When you are finished with your development session, you can disconnect from the cluster.
-
-```bash
-telepresence quit
-```
+5.  **Disconnect:**
+    ```bash
+    telepresence quit
+    ```
