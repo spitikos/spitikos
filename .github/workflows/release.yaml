@@ -80,58 +80,13 @@ jobs:
         with:
           cmd: yq -i '.image.tag = "${{ inputs.image_tag }}"' "./charts/${{ matrix.chart_path }}/values.yaml"
 
-      - name: Upload modified values.yaml as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: charts-patch-${{ steps.sanitize.outputs.name }}
-          path: ./charts/${{ matrix.chart_path }}/values.yaml
-          retention-days: 1
-
-  commit-changes:
-    name: Commit All Chart Changes
-    runs-on: ubuntu-latest
-    needs: update-chart
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout Charts Repository
-        uses: actions/checkout@v4
-        with:
-          repository: spitikos/charts
-          token: ${{ secrets.gha_pat }}
-
-      - name: Download all patched chart values
-        uses: actions/download-artifact@v4
-        with:
-          path: patches
-          pattern: charts-patch-*
-          merge-multiple: true
-
-      - name: Apply patches and commit
+      - name: Commit changes to ${{ matrix.chart_path }}
         run: |
-          # Loop over each downloaded patch file in the 'patches' directory
-          for patch_file in patches/charts-patch-*; do
-            # Extract the sanitized path from the filename
-            sanitized_path=${patch_file#patches/charts-patch-}
-            
-            # Reconstruct the original path
-            original_path=$(echo "$sanitized_path" | tr '-' '/')
-            
-            # Ensure the destination directory exists
-            mkdir -p "$(dirname "$original_path")"
-            
-            # Move the patched file to the correct location, renaming it to values.yaml
-            echo "Moving $patch_file to $original_path/values.yaml"
-            mv "$patch_file" "$original_path/values.yaml"
-          done
-          
           git config --global user.email "github-actions@github.com"
           git config --global user.name "GitHub Actions"
-          
-          # Stage all moved files
+
           git add .
-          
+
           if ! git diff --staged --quiet; then
             git commit -m "Update ${{ inputs.image_name }} image to tag ${{ inputs.image_tag }}"
             git push origin main
