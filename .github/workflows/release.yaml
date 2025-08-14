@@ -110,16 +110,20 @@ jobs:
 
       - name: Apply patches and commit
         run: |
-          for patch_dir in patches/charts-patch-*/; do
-            # Extract the sanitized path from the directory name
-            sanitized_path=${patch_dir#patches/charts-patch-}
-            sanitized_path=${sanitized_path%/}
+          # Loop over each downloaded patch file in the 'patches' directory
+          for patch_file in patches/charts-patch-*; do
+            # Extract the sanitized path from the filename
+            sanitized_path=${patch_file#patches/charts-patch-}
+            
             # Reconstruct the original path
             original_path=$(echo "$sanitized_path" | tr '-' '/')
+            
             # Ensure the destination directory exists
             mkdir -p "$(dirname "$original_path")"
-            # Move the patched file to the correct location
-            mv "$patch_dir/values.yaml" "$original_path/values.yaml"
+            
+            # Move the patched file to the correct location, renaming it to values.yaml
+            echo "Moving $patch_file to $original_path/values.yaml"
+            mv "$patch_file" "$original_path/values.yaml"
           done
           
           git config --global user.email "github-actions@github.com"
