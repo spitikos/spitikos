@@ -66,18 +66,24 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: spitikos/charts
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ secrets.gha_pat }}
           path: charts
+
+      - name: Sanitize chart path for artifact name
+        id: sanitize
+        run: |
+          sanitized_name=$(echo "${{ matrix.chart_path }}" | tr '/' '-')
+          echo "name=${sanitized_name}" >> $GITHUB_OUTPUT
 
       - name: Update image tag in ${{ matrix.chart_path }}
         uses: mikefarah/yq@master
         with:
           cmd: yq -i '.image.tag = "${{ inputs.image_tag }}"' "./charts/${{ matrix.chart_path }}/values.yaml"
 
-      - name: Upload modified charts as artifact
+      - name: Upload modified values.yaml as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: charts-patch-${{ matrix.chart_path }}
+          name: charts-patch-${{ steps.sanitize.outputs.name }}
           path: ./charts/${{ matrix.chart_path }}/values.yaml
           retention-days: 1
 
@@ -89,30 +95,41 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout Charts repository
+      - name: Checkout Charts Repository
         uses: actions/checkout@v4
         with:
           repository: spitikos/charts
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ secrets.gha_pat }}
 
       - name: Download all patched chart values
         uses: actions/download-artifact@v4
         with:
-          path: charts
+          path: patches
           pattern: charts-patch-*
           merge-multiple: true
 
-      - name: Commit Changes
+      - name: Apply patches and commit
         run: |
-          for dir in charts-patch-*/; do
-            mv "$dir"/* .
-            rm -rf "$dir"
+          for patch_dir in patches/charts-patch-*/; do
+            # Extract the sanitized path from the directory name
+            sanitized_path=${patch_dir#patches/charts-patch-}
+            sanitized_path=${sanitized_path%/}
+            # Reconstruct the original path
+            original_path=$(echo "$sanitized_path" | tr '-' '/')
+            # Ensure the destination directory exists
+            mkdir -p "$(dirname "$original_path")"
+            # Move the patched file to the correct location
+            mv "$patch_dir/values.yaml" "$original_path/values.yaml"
           done
+          
           git config --global user.email "github-actions@github.com"
           git config --global user.name "GitHub Actions"
-
-          if ! git diff --quiet; then
-            git commit -am "Update ${{ inputs.image_name }} image to tag ${{ inputs.image_tag }}"
+          
+          # Stage all moved files
+          git add .
+          
+          if ! git diff --staged --quiet; then
+            git commit -m "Update ${{ inputs.image_name }} image to tag ${{ inputs.image_tag }}"
             git push origin main
           else
             echo "No changes to commit."
