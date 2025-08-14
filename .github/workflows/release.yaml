@@ -72,12 +72,12 @@ jobs:
       - name: Setup yq
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
       - run: pip install yq
 
       - name: Update image tag in ${{ matrix.chart_path }}
         run: |
-          yq e '.image.tag = "${{ inputs.image_tag }}"' -i "charts/${{ matrix.chart_path }}/values.yaml"
+          yq e '.image.tag = "${{ inputs.image_tag }}"' -i "${{ matrix.chart_path }}/values.yaml"
 
   commit-changes:
     name: Commit All Chart Changes
