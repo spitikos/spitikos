@@ -69,16 +69,10 @@ jobs:
           token: ${{ secrets.GHA_PAT }}
           path: charts
 
-      - name: Setup yq
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
-      - run: pip install yq
-
       - name: Update image tag in ${{ matrix.chart_path }}
-        run: |
-          ls
-          yq e '.image.tag = "${{ inputs.image_tag }}"' -i "${{ matrix.chart_path }}/values.yaml"
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -i '.image.tag = "${{ inputs.image_tag }}"' "${{ matrix.chart_path }}/values.yaml"
 
   commit-changes:
     name: Commit All Chart Changes
