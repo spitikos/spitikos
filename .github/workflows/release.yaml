@@ -77,6 +77,7 @@ jobs:
 
       - name: Update image tag in ${{ matrix.chart_path }}
         run: |
+          ls
           yq e '.image.tag = "${{ inputs.image_tag }}"' -i "${{ matrix.chart_path }}/values.yaml"
 
   commit-changes:
