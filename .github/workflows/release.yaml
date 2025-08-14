@@ -75,7 +75,7 @@ jobs:
           chart_paths=$(echo '${{ inputs.chart_path }}' | jq -r '.[]')
           for path in $chart_paths; do
             echo "Updating image tag in $path/values.yaml"
-            yq -i '.image.tag = "${{ inputs.image_tag }}"' "$path/values.yaml"
+            yq -i -y '.image.tag = "${{ inputs.image_tag }}"' "$path/values.yaml"
           done
 
       - name: Commit Changes
