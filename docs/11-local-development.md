@@ -17,7 +17,7 @@ The tunnel is configured to proxy SSH traffic. To connect:
       HostName ssh.spitikos.dev
       ProxyCommand /opt/homebrew/bin/cloudflared access ssh --hostname %h
     ```
-    *(Note: Verify the path to your `cloudflared` executable by running `which cloudflared`)*
+    _(Note: Verify the path to your `cloudflared` executable by running `which cloudflared`)_
 3.  **Connect:** You can now simply run `ssh pi.spitikos.dev`.
 
 ### 1.2. Remote `kubectl` Access via TCP Tunnel
@@ -29,6 +29,7 @@ To securely connect `kubectl` to the cluster, we use `cloudflared` to create a l
 This is the best practice. It creates a background service that starts automatically when you log in.
 
 1.  **Create a `launchd` agent file.** Run the following command to create the service definition:
+
     ```bash
     cat << EOF > ~/Library/LaunchAgents/com.cloudflare.cloudflared.k8s-proxy.plist
     <?xml version="1.0" encoding="UTF-8"?>
@@ -77,32 +78,35 @@ Your `~/.kube/config` file should use the original certificate data from the Pi,
 1.  **Get the original `kubeconfig`** from the Pi: `sudo cat /etc/rancher/k3s/k3s.yaml`
 2.  **Copy it** to your local `~/.kube/config`.
 3.  **Change only the `server` line** to point to the local proxy:
-    ```diff
+    `diff
     - server: https://127.0.0.1:6443
     + server: https://localhost:6443
-    ```
-Your `kubectl` commands will now work seamlessly from any network.
+    `
+    Your `kubectl` commands will now work seamlessly from any network.
 
 ## 2. Local Application Development with Telepresence
 
-When you are actively developing a service on your local machine and need it to communicate with *other services running inside the cluster*, Telepresence is the best tool.
+When you are actively developing a service on your local machine and need it to communicate with _other services running inside the cluster_, Telepresence is the best tool.
 
-*   **Remote `kubectl`** is for managing the cluster.
-*   **Telepresence** is for developing applications that run against the cluster.
+- **Remote `kubectl`** is for managing the cluster.
+- **Telepresence** is for developing applications that run against the cluster.
 
 ### Setup and Usage
 
 1.  **Install the CLI (macOS):**
+
     ```bash
     brew install datawire/telepresence/telepresence
     ```
 
 2.  **Install the Traffic Manager:**
+
     ```bash
     telepresence helm install
     ```
 
 3.  **Connect to the Cluster:**
+
     ```bash
     sudo telepresence connect
     ```

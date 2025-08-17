@@ -9,6 +9,10 @@ The architecture consists of two types of charts:
 - **Library Charts:** These charts provide reusable, generic templates but cannot be deployed themselves. Our `charts/_common` chart is a library chart that defines standard templates for a `Deployment`, `Service`, and `IngressRoute`.
 - **Wrapper Charts:** These are deployable charts that "wrap" one or more other charts (either library or deployable) as dependencies. They provide a layer of configuration (`values.yaml`) and can add their own templates on top of the dependencies.
 
+### gRPC Service Annotation
+
+To support gRPC services, the common `_service.tpl` template was modified. It now automatically adds the `traefik.ingress.kubernetes.io/service.serversscheme: h2c` annotation to any `Service` where the `service.portName` in `values.yaml` is set to `grpc`. This is critical for telling Traefik to use the HTTP/2 Cleartext protocol when communicating with the backend pod.
+
 ## 2. Application Charts (e.g., `charts/homepage`)
 
 Our own applications use a simple wrapper chart pattern:
@@ -37,6 +41,8 @@ Our own applications use a simple wrapper chart pattern:
     ```
 
     This tells Helm: "For the `homepage` chart, render a Deployment, Service, and IngressRoute using the templates from `_common` and the values from `homepage/values.yaml`."
+
+    > **Note:** For details on the ongoing issues with routing gRPC traffic via `IngressRoute`, see the `12-grpc-routing-issue.md` document.
 
 ## 3. Platform Service Charts (e.g., `charts/traefik`)
 

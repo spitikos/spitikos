@@ -1,14 +1,27 @@
+# This ServersTransport tells Traefik to skip TLS verification when
+# connecting to the Argo CD server, which is necessary because
+# the server uses a self-signed certificate.
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: argocd-transport
+  namespace: argocd
+spec:
+  insecureSkipVerify: true
+---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: argocd-server-ingress
+  name: argocd-ingress
   namespace: argocd
 spec:
   entryPoints:
-    - web
+    - websecure
   routes:
     - match: Host(`argocd.spitikos.dev`)
       kind: Rule
       services:
         - name: argocd-server
-          port: 80
+          port: 443
+          scheme: https
+          serversTransport: argocd-transport@kubernetescrd

@@ -14,10 +14,10 @@ Traefik is a critical piece of the platform infrastructure. As such, it is manag
 
 The configuration in `charts/traefik/values.yaml` is critical for integrating with the rest of our platform.
 
-- `service.type: NodePort`: This is the most important setting. It exposes Traefik on a high-numbered port on the Raspberry Pi's own network interface. This allows the `cloudflared` service (running on the host) to connect to it.
-- `service.nodePorts.web: 30080`: We explicitly set the `NodePort` to a predictable value (`30080`). This is the port that `cloudflared` is configured to forward traffic to.
-- `entryPoints.websecure.address: ""`: We disable the `websecure` (HTTPS) entrypoint. This is because TLS is terminated at the Cloudflare edge, and traffic within our cluster is plain HTTP. This prevents port conflicts and simplifies the setup.
-- `dashboard.enabled: true` & `api.insecure: true`: These settings enable the Traefik dashboard and expose it internally for diagnostic purposes.
+- `ports.web.expose: true`: This enables the `web` entrypoint.
+- `ports.web.exposedPort: 30080`: This sets the `NodePort` to a predictable value (`30080`). This is the port that `cloudflared` is configured to forward traffic to.
+- `ports.websecure`: We do not define a `websecure` port. TLS is terminated at the Cloudflare edge, and traffic within our cluster is plain HTTP. This simplifies the setup.
+- `api.dashboard: true` & `api.insecure: true`: These settings enable the Traefik dashboard and expose it internally for diagnostic purposes.
 
 ## 3. Traefik Dashboard
 

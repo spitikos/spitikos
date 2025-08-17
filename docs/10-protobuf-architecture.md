@@ -13,9 +13,12 @@ The key principles are:
 - **Automated SDK Generation:** Buf.build automatically generates client SDKs for multiple languages and publishes them to common package registries (like npm for TypeScript or Go modules).
 - **Decoupling:** Consumer applications are completely decoupled from the `protoc` toolchain. They simply import the pre-generated, versioned SDK as a standard package dependency.
 
-## 2. Consumption Strategy: Package-Based
+## 2. Consumption Strategy: Internal gRPC and Public SDKs
 
 Both backend and frontend services consume the API definitions as standard, pre-generated packages from their respective registries.
+
+- **Internal Communication**: Backend services communicate with each other via gRPC using the Kubernetes FQDN (e.g., `api.api.svc.cluster.local:50051`). This traffic does not leave the cluster.
+- **External Communication**: Frontend applications consume a generated TypeScript client SDK from the npm registry. This SDK makes standard `fetch` requests to a public-facing API gateway, which then communicates with the internal gRPC services.
 
 ### Example Workflow
 
