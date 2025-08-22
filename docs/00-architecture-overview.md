@@ -24,7 +24,7 @@ The platform consists of several key layers:
 | **Operating System**        | Ubuntu Server     | The base OS for the Raspberry Pi.                                                                  |
 | **Container Orchestration** | k3s               | A lightweight, certified Kubernetes distribution.                                                  |
 | **Public Ingress**          | Cloudflare Tunnel | Provides a secure, outbound-only connection to the Cloudflare network, handling TLS termination.   |
-| **Internal Ingress**        | Traefik           | Routes traffic within the cluster from the tunnel to the correct service based on hostname.        |
+| **Internal Ingress**        | NGINX             | Routes traffic within the cluster from the tunnel to the correct service based on hostname.        |
 | **Application Packaging**   | Helm              | Manages Kubernetes deployments using a reusable "wrapper chart" pattern.                           |
 | **Continuous Integration**  | GitHub Actions    | Builds and pushes container images; automatically updates Helm values in the `charts` repository.  |
 | **Continuous Deployment**   | Argo CD           | Detects changes in the `charts` repository and automatically syncs them to the Kubernetes cluster. |

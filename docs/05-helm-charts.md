@@ -2,16 +2,28 @@
 
 This document explains the reusable and maintainable Helm chart architecture used in this project. The design is based on the idiomatic **Wrapper Chart** pattern, with all charts being centrally managed in the dedicated `spitikos/charts` repository. This pattern is used for both our own applications and for third-party platform services like Traefik.
 
-## 1. Core Concept: Wrapper and Library Charts
+## 1. Core Concept: Wrapper and Common Charts
 
 The architecture consists of two types of charts:
 
-- **Library Charts:** These charts provide reusable, generic templates but cannot be deployed themselves. Our `charts/_common` chart is a library chart that defines standard templates for a `Deployment`, `Service`, and `IngressRoute`.
-- **Wrapper Charts:** These are deployable charts that "wrap" one or more other charts (either library or deployable) as dependencies. They provide a layer of configuration (`values.yaml`) and can add their own templates on top of the dependencies.
+- **Common Chart:** The `charts/_common` chart is a library chart that provides reusable, generic templates for a `Deployment`, `Service`, and `Ingress`. It cannot be deployed itself.
+- **Wrapper Charts:** These are deployable charts that "wrap" the `_common` chart as a dependency. They provide a layer of configuration (`values.yaml`) that the common templates use.
 
-### gRPC Service Annotation
+### NGINX Ingress Template
 
-To support gRPC services, the common `_service.tpl` template was modified. It now automatically adds the `traefik.ingress.kubernetes.io/service.serversscheme: h2c` annotation to any `Service` where the `service.portName` in `values.yaml` is set to `grpc`. This is critical for telling Traefik to use the HTTP/2 Cleartext protocol when communicating with the backend pod.
+The `_common/templates/_ingress.tpl` is the heart of the ingress configuration. It generates a standard Kubernetes `Ingress` resource. It is designed to be flexible, allowing `values.yaml` to pass in any necessary annotations. This is how we enable gRPC:
+
+**`api/values.yaml`:**
+```yaml
+ingress:
+  enabled: true
+  host: api.spitikos.dev
+  annotations:
+    # This annotation is passed through to the Ingress template
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+```
+
+This pattern keeps the application charts simple while allowing for powerful, per-app ingress configuration.
 
 ## 2. Application Charts (e.g., `charts/homepage`)
 

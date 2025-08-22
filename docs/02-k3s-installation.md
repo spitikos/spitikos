@@ -22,10 +22,20 @@ curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable=traefik" sh -s - --wr
 After the installation, verify that the k3s service is running correctly:
 
 ```bash
-sudo systemctl status k3s
+sudo systemctl status k3s # Or k3s-server.service
 ```
 
 The output should show the service as `active (running)`.
+
+### Critical: Verify Cluster Networking
+
+Before deploying any applications, it is critical to verify that the cluster's internal networking and DNS are healthy. Run the following command:
+
+```bash
+kubectl run --rm -it --image=busybox test-dns -- sh -c "nslookup kubernetes.default"
+```
+
+This command must succeed. If it fails with a timeout or a `serviceaccount not found` error, the K3s installation is not healthy. You must perform a "deep clean" (uninstall, delete `/etc/rancher` and `/var/lib/rancher`, and reboot) before re-installing.
 
 ## 2. Configuring Remote `kubectl` Access
 

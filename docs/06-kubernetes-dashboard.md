@@ -12,12 +12,9 @@ Like all other components in this project, the Kubernetes Dashboard is deployed 
 
 ## 2. Ingress and Networking
 
-The dashboard is exposed at **https://kube-pi.taehoonlee.dev**.
+The dashboard is exposed at **https://kube.spitikos.dev**.
 
-The wrapper chart contains a custom `IngressRoute` template that:
-
-- Routes traffic based on the `host` value in `values.yaml`.
-- Includes a `ServersTransport` resource to allow Traefik to communicate with the dashboard's self-signed TLS certificate on its backend service.
+The wrapper chart contains a standard `Ingress` template that is managed by the NGINX Ingress Controller.
 
 ## 3. Authentication: Service Account and Token
 

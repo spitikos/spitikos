@@ -1,65 +1,77 @@
 # Documentation: Cloudflare Tunnel
 
-This document explains how to set up `cloudflared` to create a secure, outbound-only connection from the Raspberry Pi to the Cloudflare network. This exposes services to the internet without opening any firewall ports, and provides a managed TLS certificate at the Cloudflare edge.
+This document explains the final, working configuration for `cloudflared`, which creates a secure, outbound-only connection from the cluster to the Cloudflare network. This exposes services to the internet without opening any firewall ports.
 
-## 1. Installation and Authentication
+This configuration is the result of extensive troubleshooting and is the single source of truth for proxying both standard HTTPS and gRPC traffic.
 
-(The installation and authentication steps remain the same as before: install the `cloudflared` package, log in, and create a tunnel, saving the UUID and credentials file path.)
+## 1. DNS Configuration
 
-## 2. DNS Configuration: Subdomain-based Routing
+All public-facing services are defined as `CNAME` records in Cloudflare DNS, pointing to the tunnel's unique ID. This is the most robust method.
 
-To avoid issues with path-based routing and SSL certificates, we use a clean, subdomain-based routing strategy. Each service gets its own unique hostname.
+- **Type:** `CNAME`
+- **Name:** `api` (or `homepage`, `@`, etc.)
+- **Target:** `<YOUR_TUNNEL_ID>.cfargotunnel.com`
+- **Proxy status:** **Proxied (orange cloud)**
 
-In the Cloudflare DNS dashboard for your domain, create the following `CNAME` records. They should all point to your tunnel's public address (e.g., `<UUID>.cfargotunnel.com`).
+## 2. `cloudflared` Service Configuration
 
-| Type    | Name         | Target                    |
-| :------ | :----------- | :------------------------ |
-| `CNAME` | `pi`         | `<UUID>.cfargotunnel.com` |
-| `CNAME` | `argocd-pi`  | `<UUID>.cfargotunnel.com` |
-| `CNAME` | `kube-pi`    | `<UUID>.cfargotunnel.com` |
-| `CNAME` | `traefik-pi` | `<UUID>.cfargotunnel.com` |
+The `cloudflared` daemon on the Raspberry Pi requires two pieces of configuration to handle gRPC correctly.
 
-This setup ensures that Cloudflare's Universal SSL certificate properly covers all hostnames.
+### 2.1. `systemd` Service Override
 
-## 3. Tunnel Configuration (`config.yml`)
+The daemon must be started with the `--protocol http2` flag. This is a global setting that enables the correct transport protocol for the entire tunnel.
 
-The `cloudflared` service on the Raspberry Pi must be configured to accept traffic for all public hostnames and route them to the correct internal services.
+1.  **Create an override directory:**
+    ```bash
+    sudo mkdir -p /etc/systemd/system/cloudflared.service.d/
+    ```
+2.  **Create the override file:**
+    *   **File:** `/etc/systemd/system/cloudflared.service.d/override.conf`
+    ```ini
+    [Service]
+    ExecStart=
+    ExecStart=/usr/local/bin/cloudflared --protocol http2 tunnel run
+    ```
+    *(Note: The first `ExecStart=` is blank to clear the original command before replacing it.)*
+3.  **Reload the systemd daemon** after creating or changing this file:
+    ```bash
+    sudo systemctl daemon-reload
+    sudo systemctl restart cloudflared
+    ```
 
-The configuration file at `/etc/cloudflared/config.yml` should be structured with the most specific rules first.
+### 2.2. `config.yml` Ingress Rules
 
+This file tells the `cloudflared` agent how to route traffic. The key is to use a consistent `https` service type with the `http2Origin` flag for all web and gRPC traffic.
+
+*   **File:** `/etc/cloudflared/config.yml`
 ```yaml
-# The Tunnel UUID from the 'tunnel create' command
 tunnel: <YOUR_TUNNEL_UUID>
-# The path to the credentials file
 credentials-file: <YOUR_CREDENTIALS_FILE_PATH>
 
-# Ingress rules define which hostnames are accepted and where they go.
 ingress:
-  # 1. Specific services that do not go to the Traefik ingress controller.
-  - hostname: "k8s.spitikos.dev"
-    service: https://127.0.0.1:6443
+  # This rule handles gRPC traffic for the API server.
+  - hostname: api.spitikos.dev
+    service: https://10.0.0.200:443
     originRequest:
       noTLSVerify: true
-  - hostname: "ssh.spitikos.dev"
-    service: ssh://127.0.0.1:22
+      http2Origin: true
 
-  # 2. The root domain for the homepage, which goes to Traefik.
-  - hostname: "spitikos.dev"
-    service: http://10.0.0.200:30080
-
-  # 3. A wildcard for all other subdomains, which also go to Traefik.
+  # This is a consistent catch-all for all other HTTPS traffic.
   - hostname: "*.spitikos.dev"
-    service: http://10.0.0.200:30080
+    service: https://10.0.0.200:443
+    originRequest:
+      noTLSVerify: true
+      http2Origin: true
 
-  # 4. A required catch-all rule to terminate the list.
+  # Other rules for non-HTTP services.
+  - hostname: "k8s.spitikos.dev"
+    service: "tcp://127.0.0.1:6443"
+  - hostname: "ssh.spitikos.dev"
+    service: "ssh://127.0.0.1:22"
+
+  # Final catch-all
   - service: http_status:404
 ```
-
-After creating this configuration, install and start the `cloudflared` service on the Pi.
-
-```bash
-sudo cloudflared service install
-sudo systemctl start cloudflared
-```
-
-The tunnel is now active and routing traffic for all configured services.
+- **`service: https://10.0.0.200:443`**: All traffic is pointed to the NGINX LoadBalancer service on the Pi's local IP at the standard HTTPS port.
+- **`noTLSVerify: true`**: This is required because the NGINX Ingress Controller will present its default, self-signed "Fake Certificate," which is not publicly trusted.
+- **`http2Origin: true`**: This flag enables the HTTP/2 protocol for the connection from `cloudflared` to NGINX, which is necessary for gRPC to work.
