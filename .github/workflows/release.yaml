@@ -80,8 +80,8 @@ jobs:
 
       - name: Commit Changes
         run: |
-          git config --global user.email "github-actions@github.com"
-          git config --global user.name "GitHub Actions"
+          git config --global user.name "${GITHUB_ACTOR}"
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           # Stage all changes from the loop
           git add .
           # Check if there are any staged changes to commit
