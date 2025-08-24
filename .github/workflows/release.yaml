@@ -38,7 +38,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHA_PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
@@ -80,14 +80,12 @@ jobs:
 
       - name: Commit Changes
         run: |
-          git config --global user.name "${GITHUB_ACTOR}"
-          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          # Stage all changes from the loop
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          # Check if there are any staged changes to commit
           if ! git diff --staged --quiet; then
             git commit -m "Update ${{ inputs.image_name }} image to tag ${{ inputs.image_tag }}"
-            git push origin main
+            git push
           else
             echo "No changes to commit."
           fi
